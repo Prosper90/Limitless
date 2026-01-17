@@ -1,4 +1,9 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
+import {
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useAccount,
+} from "wagmi";
 import { parseEther, formatEther } from "viem";
 import {
   CONTRACTS,
@@ -7,14 +12,16 @@ import {
   LIQUIDITY_POOL_ABI,
   REFERRAL_MANAGER_ABI,
   LIMITLESS_REWARDS_ABI,
-  ERC20_ABI
+  ERC20_ABI,
 } from "../utils/contracts";
 
 // Hook for NFT operations
 export function useLimitlessNFT() {
   const { address } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const { data: nftPrice } = useReadContract({
     address: CONTRACTS.LIMITLESS_NFT as `0x${string}`,
@@ -42,7 +49,9 @@ export function useLimitlessNFT() {
     args: address ? [address] : undefined,
   });
 
-  const mintNFT = async (referrer: string = "0x0000000000000000000000000000000000000000") => {
+  const mintNFT = async (
+    referrer: string = "0x0000000000000000000000000000000000000000",
+  ) => {
     writeContract({
       address: CONTRACTS.LIMITLESS_NFT as `0x${string}`,
       abi: LIMITLESS_NFT_ABI,
@@ -97,7 +106,9 @@ export function useLimitlessToken() {
 
   return {
     tokenBalance: tokenBalance ? formatEther(tokenBalance as bigint) : "0",
-    circulatingSupply: circulatingSupply ? formatEther(circulatingSupply as bigint) : "0",
+    circulatingSupply: circulatingSupply
+      ? formatEther(circulatingSupply as bigint)
+      : "0",
     lockedSupply: lockedSupply ? formatEther(lockedSupply as bigint) : "0",
     totalSupply: totalSupply ? formatEther(totalSupply as bigint) : "0",
     refetchBalance,
@@ -106,9 +117,11 @@ export function useLimitlessToken() {
 
 // Hook for Liquidity Pool operations
 export function useLiquidityPool() {
-  const { address } = useAccount();
+  // const { address } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const { data: poolStats, refetch: refetchStats } = useReadContract({
     address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
@@ -128,11 +141,11 @@ export function useLiquidityPool() {
     functionName: "minRedemptionAmount",
   });
 
-  const calculateRedemption = async (amount: string) => {
-    const amountWei = parseEther(amount);
-    // This is a view function, would need to be called separately
-    return "0";
-  };
+  // const calculateRedemption = async (amount: string) => {
+  //   const amountWei = parseEther(amount);
+  //   // This is a view function, would need to be called separately
+  //   return "0";
+  // };
 
   const redeemTokens = async (amount: string) => {
     const amountWei = parseEther(amount);
@@ -144,7 +157,9 @@ export function useLiquidityPool() {
     });
   };
 
-  const stats = poolStats as [bigint, bigint, bigint, bigint, bigint] | undefined;
+  const stats = poolStats as
+    | [bigint, bigint, bigint, bigint, bigint]
+    | undefined;
 
   return {
     tvl: stats ? formatEther(stats[0]) : "0",
@@ -166,7 +181,9 @@ export function useLiquidityPool() {
 export function useLimitlessRewards() {
   const { address } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const { data: rewardInfo, refetch: refetchRewards } = useReadContract({
     address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
@@ -196,7 +213,9 @@ export function useLimitlessRewards() {
     });
   };
 
-  const info = rewardInfo as [bigint, bigint, bigint, bigint, bigint] | undefined;
+  const info = rewardInfo as
+    | [bigint, bigint, bigint, bigint, bigint]
+    | undefined;
   const global = globalStats as [bigint, bigint, bigint] | undefined;
 
   return {
@@ -205,7 +224,7 @@ export function useLimitlessRewards() {
     totalClaimed: info ? formatEther(info[2]) : "0",
     pendingRewards: info ? formatEther(info[3]) : "0",
     nextClaimTime: info ? new Date(Number(info[4]) * 1000) : null,
-    hasClaimableRewards: hasClaimable as boolean ?? false,
+    hasClaimableRewards: (hasClaimable as boolean) ?? false,
     totalNFTsMinted: global ? global[0].toString() : "0",
     totalRewardsDistributed: global ? formatEther(global[1]) : "0",
     dailyEmissionRate: global ? formatEther(global[2]) : "0",
@@ -250,16 +269,22 @@ export function useReferralManager() {
     args: address ? [address] : undefined,
   });
 
-  const user = userData as [string, boolean, bigint, bigint, bigint] | undefined;
-  const levels = teamByLevels as [bigint, bigint, bigint, bigint, bigint, bigint] | undefined;
+  const user = userData as
+    | [string, boolean, bigint, bigint, bigint]
+    | undefined;
+  const levels = teamByLevels as
+    | [bigint, bigint, bigint, bigint, bigint, bigint]
+    | undefined;
 
   return {
     referrer: user ? user[0] : null,
-    isRegistered: isRegistered as boolean ?? false,
+    isRegistered: (isRegistered as boolean) ?? false,
     directReferrals: user ? user[2].toString() : "0",
     totalTeamSize: user ? user[3].toString() : "0",
     totalEarned: user ? formatEther(user[4]) : "0",
-    teamByLevels: levels ? levels.map(l => l.toString()) : ["0", "0", "0", "0", "0", "0"],
+    teamByLevels: levels
+      ? levels.map((l) => l.toString())
+      : ["0", "0", "0", "0", "0", "0"],
     commissionCount: commissionCount?.toString() || "0",
   };
 }
@@ -268,7 +293,9 @@ export function useReferralManager() {
 export function useStablecoin() {
   const { address } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const { data: balance, refetch: refetchBalance } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
@@ -281,7 +308,9 @@ export function useStablecoin() {
     address: CONTRACTS.STABLECOIN as `0x${string}`,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: address ? [address, CONTRACTS.LIMITLESS_NFT as `0x${string}`] : undefined,
+    args: address
+      ? [address, CONTRACTS.LIMITLESS_NFT as `0x${string}`]
+      : undefined,
   });
 
   const { data: symbol } = useReadContract({
@@ -303,7 +332,7 @@ export function useStablecoin() {
   return {
     balance: balance ? formatEther(balance as bigint) : "0",
     allowance: allowance ? formatEther(allowance as bigint) : "0",
-    symbol: symbol as string || "USDT",
+    symbol: (symbol as string) || "USDT",
     approve,
     isPending,
     isConfirming,
