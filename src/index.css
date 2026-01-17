@@ -1,0 +1,428 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* Nerko Theme Variables */
+:root {
+  color-scheme: dark;
+
+  /* Primary Colors */
+  --tg-theme-primary: #741ff5;
+  --tg-theme-secondary: #e348ff;
+  --tg-gradient-1: #2600fc;
+  --tg-gradient-2: #ff00ea;
+
+  /* Common Colors */
+  --tg-common-color-white: #fff;
+  --tg-common-color-black: #0f051d;
+  --tg-body-color: #7b7583;
+  --tg-heading-color: #ffffff;
+
+  /* Borders */
+  --tg-border-1: rgba(131, 131, 131, 0.25);
+  --tg-border-2: rgba(255, 255, 255, 0.1);
+
+  /* Background */
+  --tg-dark-bg: #0f051d;
+  --tg-card-bg: rgba(255, 255, 255, 0.02);
+  --tg-card-bg-hover: rgba(255, 255, 255, 0.05);
+
+  /* Font Weights */
+  --tg-fw-bold: 700;
+  --tg-fw-semi-bold: 600;
+  --tg-fw-medium: 500;
+  --tg-fw-regular: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Roboto",
+    "Oxygen",
+    "Ubuntu",
+    "Cantarell",
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--tg-dark-bg);
+  color: var(--tg-common-color-white);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tg-dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tg-theme-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tg-theme-secondary);
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--tg-heading-color);
+  font-weight: var(--tg-fw-bold);
+  line-height: 1.2;
+  margin-top: 0;
+}
+
+a {
+  /* color: var(--tg-theme-primary); */
+  text-decoration: none;
+  transition: all 0.3s ease;
+  color: var(--tg-heading-color);
+}
+
+a:hover {
+  color: var(--tg-heading-color);
+  opacity: 0.5;
+  visibility: visible;
+  transform: scale(1);
+}
+
+/* Custom input styling */
+input[type="number"] {
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Nerko Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: var(--tg-fw-bold);
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.btn-primary {
+  background: var(--tg-theme-primary);
+  color: var(--tg-common-color-white);
+}
+
+.btn-primary:hover {
+  background: var(--tg-theme-secondary);
+}
+
+.btn-gradient {
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  color: var(--tg-common-color-white);
+}
+
+.btn-gradient::after {
+  content: "";
+  position: absolute;
+  border-radius: 50px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  transition: 0.3s ease;
+  background-image: linear-gradient(
+    25deg,
+    var(--tg-gradient-1),
+    var(--tg-gradient-2)
+  );
+}
+
+.btn-gradient:hover::after {
+  opacity: 0.85;
+}
+
+.btn-gradient-lg {
+  font-size: 18px;
+  padding: 21px 40px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--tg-border-1);
+  color: var(--tg-heading-color);
+  position: relative;
+  z-index: 1;
+}
+
+.btn-outline::after {
+  content: "";
+  position: absolute;
+  border-radius: 50px;
+  left: -2px;
+  top: -2px;
+  right: -2px;
+  bottom: -2px;
+  z-index: -1;
+  transition: 0.3s ease;
+  background-image: linear-gradient(
+    25deg,
+    var(--tg-gradient-1),
+    var(--tg-gradient-2)
+  );
+  opacity: 0;
+}
+
+.btn-outline:hover {
+  border-color: transparent;
+  color: var(--tg-common-color-white);
+}
+
+.btn-outline:hover::after {
+  opacity: 1;
+}
+
+/* Card Styles */
+.nerko-card {
+  background: var(--tg-card-bg);
+  border: 1px solid var(--tg-border-2);
+  border-radius: 20px;
+  padding: 30px;
+  transition: all 0.3s ease;
+}
+
+.nerko-card:hover {
+  background: var(--tg-card-bg-hover);
+  border-color: var(--tg-border-1);
+}
+
+/* Input Styles */
+.nerko-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--tg-border-2);
+  border-radius: 10px;
+  padding: 15px 20px;
+  color: var(--tg-common-color-white);
+  font-size: 16px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.nerko-input:focus {
+  outline: none;
+  border-color: var(--tg-theme-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nerko-input::placeholder {
+  color: var(--tg-body-color);
+}
+
+/* Section Styles */
+.section-title {
+  font-size: 44px;
+  font-weight: var(--tg-fw-bold);
+  margin-bottom: 15px;
+  line-height: 1.2;
+}
+
+.section-title span {
+  background: linear-gradient(
+    25deg,
+    var(--tg-gradient-1),
+    var(--tg-gradient-2)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 20s linear infinite;
+}
+
+/* Stagger animation delays */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
+.delay-300 {
+  animation-delay: 0.3s;
+}
+.delay-400 {
+  animation-delay: 0.4s;
+}
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(116, 31, 245, 0.3);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(
+    25deg,
+    var(--tg-gradient-1),
+    var(--tg-gradient-2)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Stats counter style */
+.stat-value {
+  font-size: 36px;
+  font-weight: var(--tg-fw-bold);
+  color: var(--tg-common-color-white);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--tg-body-color);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+/* Container */
+.container {
+  max-width: 1230px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-block;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: var(--tg-fw-semi-bold);
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.badge-primary {
+  background: rgba(116, 31, 245, 0.15);
+  color: var(--tg-theme-primary);
+}
+
+.badge-success {
+  background: rgba(25, 135, 84, 0.15);
+  color: #198754;
+}
+
+.badge-warning {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}

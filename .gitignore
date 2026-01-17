@@ -1,0 +1,250 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+build/
+.vite/
+.rollup.cache/
+.turbo/
+
+# Environment variables
+.env
+.env.local
+.env.example
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# IDE and Editor files
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# TypeScript
+*.tsbuildinfo
+.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# Stylelint
+.stylelintcache
+
+# Prettier
+.prettierignore
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+.jest/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Storybook build outputs
+.out
+.storybook-out
+storybook-static/
+
+# Temporary folders
+tmp/
+temp/
+
+# Vite
+.vite/
+vite.config.js.timestamp-*
+
+# SvelteKit
+.svelte-kit/
+
+# Nuxt.js
+.nuxt/
+.output/
+
+# Next.js
+.next/
+
+# Gatsby
+.cache/
+
+# Docusaurus
+.docusaurus/
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Web3 and blockchain specific
+.openzeppelin/
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Local development
+*.local
+
+# Sentry
+.sentryclirc
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Archive files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Package managers lockfiles (keep one, ignore others)
+# Uncomment the one you're NOT using:
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Analytics and tracking
+.vercel/
+.netlify/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Supabase
+.supabase/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Local Netlify folder
+.netlify
+
+# AWS
+.aws/
+
+# Docker
+Dockerfile.local
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+
+# Generated files
+generated/
+auto-generated/
+
+# Build tools
+.turbo/
+.nx/cache/
+
+# Package analysis
+bundle-analyzer-report.html
+stats.json
+
+# Hot reload
+.hot-reload/
+
+# Profiling
+.cpuprofile
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# Vitest
+coverage/
