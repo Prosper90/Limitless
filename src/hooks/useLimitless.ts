@@ -289,20 +289,159 @@ export function useReferralManager() {
   };
 }
 
+// Hook for combined claim and burn operations
+export function useClaimAndBurn() {
+  const { address } = useAccount();
+  const {
+    writeContract: writeClaimContract,
+    data: claimHash,
+    isPending: isClaimPending,
+  } = useWriteContract();
+  const {
+    writeContract: writeBurnContract,
+    data: burnHash,
+    isPending: isBurnPending,
+    error: burnError,
+  } = useWriteContract();
+
+  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } =
+    useWaitForTransactionReceipt({
+      hash: claimHash,
+    });
+
+  const { isLoading: isBurnConfirming, isSuccess: isBurnSuccess } =
+    useWaitForTransactionReceipt({
+      hash: burnHash,
+    });
+
+  const { data: rewardInfo } = useReadContract({
+    address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
+    abi: LIMITLESS_REWARDS_ABI,
+    functionName: "getUserRewardInfo",
+    args: address ? [address] : undefined,
+  });
+
+  const info = rewardInfo as
+    | [bigint, bigint, bigint, bigint, bigint]
+    | undefined;
+  const pendingRewardsRaw = info ? info[3] : BigInt(0);
+  const hasPendingRewards = pendingRewardsRaw > BigInt(0);
+
+  const claimAndBurn = async (
+    burnAmount: string,
+    onClaimComplete?: () => void,
+  ) => {
+    const amountWei = parseEther(burnAmount);
+
+    // If there are pending rewards, claim first
+    if (hasPendingRewards) {
+      writeClaimContract(
+        {
+          address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
+          abi: LIMITLESS_REWARDS_ABI,
+          functionName: "claimRewards",
+        },
+        {
+          onSuccess: () => {
+            onClaimComplete?.();
+            // After claim succeeds, proceed with burn
+            writeBurnContract({
+              address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
+              abi: LIQUIDITY_POOL_ABI,
+              functionName: "redeemTokens",
+              args: [amountWei],
+            });
+          },
+        },
+      );
+    } else {
+      // No pending rewards, just burn directly
+      writeBurnContract({
+        address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
+        abi: LIQUIDITY_POOL_ABI,
+        functionName: "redeemTokens",
+        args: [amountWei],
+      });
+    }
+  };
+
+  return {
+    claimAndBurn,
+    hasPendingRewards,
+    pendingRewards: formatEther(pendingRewardsRaw),
+    isClaimPending,
+    isClaimConfirming,
+    isClaimSuccess,
+    isBurnPending,
+    isBurnConfirming,
+    isBurnSuccess,
+    isPending: isClaimPending || isBurnPending,
+    isConfirming: isClaimConfirming || isBurnConfirming,
+    isSuccess: isBurnSuccess,
+    error: burnError,
+  };
+}
+
+// Check token balance using useReadContract (more reliable for ERC20)
+// export function useTokenBalance(
+//   tokenAddress: `0x${string}`,
+//   accountAddress: `0x${string}` | undefined,
+// ) {
+//   const { data, isLoading, error } = useReadContract({
+//     address: tokenAddress,
+//     abi: ERC20_ABI,
+//     functionName: "balanceOf",
+//     args: accountAddress ? [accountAddress] : undefined,
+//     query: {
+//       enabled: !!accountAddress && accountAddress !== "0x0",
+//     },
+//   });
+
+//   console.log(data, "At rest soilder");
+
+//   return {
+//     data: data as bigint | undefined,
+//     isLoading,
+//     error,
+//   };
+// }
+
 // Hook for USDT approval
 export function useStablecoin() {
-  const { address } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
-  const { data: balance, refetch: refetchBalance } = useReadContract({
+  // Debug: Log connection state
+  console.log("=== useStablecoin Debug ===");
+  console.log("Connected:", isConnected);
+  console.log("Chain:", chain?.name, chain?.id);
+  console.log("User Address:", address);
+  console.log("Contract Address:", CONTRACTS.STABLECOIN);
+
+  const {
+    data: balance,
+    refetch: refetchBalance,
+    error: balanceError,
+    isLoading: balanceLoading,
+    status: balanceStatus,
+  } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && isConnected,
+    },
   });
+
+  console.log("Balance Status:", balanceStatus);
+  console.log("Balance Loading:", balanceLoading);
+  console.log("Balance Data:", balance);
+  console.log("Balance Error:", balanceError);
+  console.log("=== End Debug ===");
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
@@ -340,5 +479,6 @@ export function useStablecoin() {
     error,
     refetchBalance,
     refetchAllowance,
+    hash,
   };
 }

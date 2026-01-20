@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ConnectKitButton } from "connectkit";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
 
 interface LayoutProps {
@@ -15,6 +15,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const location = useLocation();
   const { isConnected } = useAccount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const navItems = [
     { path: "/", label: "Home" },
@@ -24,10 +25,22 @@ export const Layout: React.FC<LayoutProps> = ({
     { path: "/team", label: "My Team" },
   ];
 
+  useEffect(() => {
+    const handleScroll = () => {
+      // Toggle state based on 50px scroll threshold
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#0F051D] text-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0F051D]/80 backdrop-blur-md border-b border-white/5">
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 ${isScrolled ? "bg-[#0F051D]/80 backdrop-blur-md border-b border-white/5" : "bg-transparent border-none"}`}
+      >
         <div className="container">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
@@ -57,35 +70,75 @@ export const Layout: React.FC<LayoutProps> = ({
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
-              {/* ConnectKit Button with custom styling */}
-              <ConnectKitButton.Custom>
-                {({ isConnected, show, truncatedAddress, ensName }) => {
+              {/* RainbowKit Button with custom styling */}
+              <ConnectButton.Custom>
+                {({
+                  account,
+                  chain,
+                  openAccountModal,
+                  openChainModal,
+                  openConnectModal,
+                  mounted,
+                }) => {
+                  const ready = mounted;
+                  const connected = ready && account && chain;
+
                   return (
-                    <button
-                      onClick={show}
-                      className={`${
-                        isConnected
-                          ? "bg-white/5 border border-white/10 hover:border-purple-500/30"
-                          : "bg-gradient-to-r from-[#2600fc] to-[#ff00ea]"
-                      } px-4 sm:px-6 py-2.5 rounded-full font-semibold text-sm transition-all flex items-center gap-2`}
+                    <div
+                      {...(!ready && {
+                        "aria-hidden": true,
+                        style: {
+                          opacity: 0,
+                          pointerEvents: "none",
+                          userSelect: "none",
+                        },
+                      })}
                     >
-                      {isConnected ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="hidden sm:inline">
-                            {ensName ?? truncatedAddress}
-                          </span>
-                          <span className="sm:hidden">
-                            {truncatedAddress?.slice(0, 6)}...
-                          </span>
-                        </>
-                      ) : (
-                        "Connect Wallet"
-                      )}
-                    </button>
+                      {(() => {
+                        if (!connected) {
+                          return (
+                            <button
+                              onClick={openConnectModal}
+                              type="button"
+                              className="bg-transparent border border-white px-4 sm:px-6 py-2.5 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer hover:bg-white/10"
+                            >
+                              Connect Wallet
+                            </button>
+                          );
+                        }
+
+                        if (chain.unsupported) {
+                          return (
+                            <button
+                              onClick={openChainModal}
+                              type="button"
+                              className="bg-red-600 border border-red-500 px-4 sm:px-6 py-2.5 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer"
+                            >
+                              Wrong Network
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <button
+                            onClick={openAccountModal}
+                            type="button"
+                            className="bg-white/5 border border-white/10 hover:border-purple-500/30 px-4 sm:px-6 py-2.5 rounded-full font-semibold text-sm transition-all flex items-center gap-2 cursor-pointer"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="hidden sm:inline">
+                              {account.ensName ?? account.displayName}
+                            </span>
+                            <span className="sm:hidden">
+                              {account.displayName}
+                            </span>
+                          </button>
+                        );
+                      })()}
+                    </div>
                   );
                 }}
-              </ConnectKitButton.Custom>
+              </ConnectButton.Custom>
 
               {/* Mobile Menu Button */}
               <button
@@ -169,10 +222,12 @@ export const Layout: React.FC<LayoutProps> = ({
                 Please connect your BSC wallet to access the LIMITLESS platform
                 and start earning
               </p>
-              <ConnectKitButton.Custom>
-                {({ show }) => (
+              <ConnectButton.Custom>
+                {({ openConnectModal, mounted }) => (
                   <button
-                    onClick={show}
+                    onClick={openConnectModal}
+                    type="button"
+                    disabled={!mounted}
                     className="btn btn-gradient btn-gradient-lg"
                   >
                     Connect Wallet
@@ -191,7 +246,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     </svg>
                   </button>
                 )}
-              </ConnectKitButton.Custom>
+              </ConnectButton.Custom>
             </div>
           </div>
         ) : (
@@ -200,7 +255,7 @@ export const Layout: React.FC<LayoutProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="bg-white/[0.02] border-t border-white/5 py-16">
+      <footer className="bg-white/[0.02] border-t border-white/5 py-16 mt-16">
         <div className="container">
           <div className="grid md:grid-cols-4 gap-12">
             {/* Logo & Description */}

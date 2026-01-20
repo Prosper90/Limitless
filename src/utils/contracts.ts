@@ -1,108 +1,564 @@
-// Contract addresses - Update these after deployment
+// Contract addresses - Deployed to Sepolia on 2025-01-19
 export const CONTRACTS = {
-  LIMITLESS_NFT: import.meta.env.VITE_NFT_ADDRESS || "0x0000000000000000000000000000000000000000",
-  LIMITLESS_TOKEN: import.meta.env.VITE_TOKEN_ADDRESS || "0x0000000000000000000000000000000000000000",
-  LIQUIDITY_POOL: import.meta.env.VITE_POOL_ADDRESS || "0x0000000000000000000000000000000000000000",
-  REFERRAL_MANAGER: import.meta.env.VITE_REFERRAL_ADDRESS || "0x0000000000000000000000000000000000000000",
-  LIMITLESS_REWARDS: import.meta.env.VITE_REWARDS_ADDRESS || "0x0000000000000000000000000000000000000000",
-  STABLECOIN: import.meta.env.VITE_STABLECOIN_ADDRESS || "0x0000000000000000000000000000000000000000",
+  LIMITLESS_NFT:
+    import.meta.env.VITE_NFT_ADDRESS ||
+    "0x603223c1c3d8340E2aE77b681aA30Ef8b4A908DB",
+  LIMITLESS_TOKEN:
+    import.meta.env.VITE_TOKEN_ADDRESS ||
+    "0x9052E962Fb16d3CF9D2BDE669ABA49e8C0c3769A",
+  LIQUIDITY_POOL:
+    import.meta.env.VITE_POOL_ADDRESS ||
+    "0xE07fa79957741F46E4934cD9303234c9fB419d90",
+  REFERRAL_MANAGER:
+    import.meta.env.VITE_REFERRAL_ADDRESS ||
+    "0x6a3CF5B8e5746efDBf4e6EC187e75dce1cB25001",
+  LIMITLESS_REWARDS:
+    import.meta.env.VITE_REWARDS_ADDRESS ||
+    "0x8e54a8a2b7f94B1d1Cd7a5F64859d15612F42B30",
+  STABLECOIN:
+    import.meta.env.VITE_STABLECOIN_ADDRESS ||
+    "0x09fcF239CC371c23DB47b5762B5A1E0266e08207",
 } as const;
 
-// LimitlessNFT ABI - Main entry point for NFT purchases
+// LimitlessNFT ABI - Main entry point for NFT purchases (JSON format for wagmi v2)
 export const LIMITLESS_NFT_ABI = [
   // Read functions
-  "function NFT_PRICE() view returns (uint256)",
-  "function balanceOf(address owner) view returns (uint256)",
-  "function totalMinted() view returns (uint256)",
-  "function tokensOfOwner(address owner) view returns (uint256[])",
-  "function tokenURI(uint256 tokenId) view returns (string)",
-  "function rndWallet() view returns (address)",
-  "function getCEOWallets() view returns (address[])",
-  "function paused() view returns (bool)",
+  {
+    type: "function",
+    name: "NFT_PRICE",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalMinted",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "tokensOfOwner",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ type: "uint256[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "tokenURI",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "rndWallet",
+    inputs: [],
+    outputs: [{ type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getCEOWallets",
+    inputs: [],
+    outputs: [{ type: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
   // Write functions
-  "function mint(address referrer) external",
+  {
+    type: "function",
+    name: "mint",
+    inputs: [{ name: "referrer", type: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
   // Events
-  "event NFTMinted(address indexed buyer, uint256 indexed tokenId, address indexed referrer, uint256 timestamp)",
+  {
+    type: "event",
+    name: "NFTMinted",
+    inputs: [
+      { name: "buyer", type: "address", indexed: true },
+      { name: "tokenId", type: "uint256", indexed: true },
+      { name: "referrer", type: "address", indexed: true },
+      { name: "timestamp", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
-// LimitlessToken ABI
+// LimitlessToken ABI (JSON format for wagmi v2)
 export const LIMITLESS_TOKEN_ABI = [
   // Read functions
-  "function name() view returns (string)",
-  "function symbol() view returns (string)",
-  "function decimals() view returns (uint8)",
-  "function totalSupply() view returns (uint256)",
-  "function balanceOf(address account) view returns (uint256)",
-  "function circulatingSupply() view returns (uint256)",
-  "function getLockedSupply() view returns (uint256)",
-  "function paused() view returns (bool)",
+  {
+    type: "function",
+    name: "name",
+    inputs: [],
+    outputs: [{ type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "symbol",
+    inputs: [],
+    outputs: [{ type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "decimals",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalSupply",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "circulatingSupply",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getLockedSupply",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
   // Write functions
-  "function burn(uint256 amount) external",
-  "function approve(address spender, uint256 amount) returns (bool)",
-  "function transfer(address to, uint256 amount) returns (bool)",
+  {
+    type: "function",
+    name: "burn",
+    inputs: [{ name: "amount", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "approve",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "transfer",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+    stateMutability: "nonpayable",
+  },
   // Events
-  "event TokensMinted(address indexed to, uint256 amount)",
-  "event TokensBurned(address indexed from, uint256 amount, uint256 redemptionValue)",
+  {
+    type: "event",
+    name: "TokensMinted",
+    inputs: [
+      { name: "to", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "TokensBurned",
+    inputs: [
+      { name: "from", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "redemptionValue", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
-// LiquidityPool ABI
+// LiquidityPool ABI (JSON format for wagmi v2)
 export const LIQUIDITY_POOL_ABI = [
   // Read functions
-  "function totalValueLocked() view returns (uint256)",
-  "function totalRedeemed() view returns (uint256)",
-  "function getCurrentTokenPrice() view returns (uint256)",
-  "function calculateRedemption(uint256 tokenAmount) view returns (uint256)",
-  "function minRedemptionAmount() view returns (uint256)",
-  "function getPoolStats() view returns (uint256 tvl, uint256 redeemed, uint256 circulatingSupply, uint256 tokenPrice, uint256 poolBalance)",
-  "function getHistoryLength() view returns (uint256)",
-  "function getRecentSnapshots(uint256 count) view returns (tuple(uint256 timestamp, uint256 tvl, uint256 circulatingSupply, uint256 tokenPrice)[])",
-  "function paused() view returns (bool)",
+  {
+    type: "function",
+    name: "totalValueLocked",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalRedeemed",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getCurrentTokenPrice",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "calculateRedemption",
+    inputs: [{ name: "tokenAmount", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "minRedemptionAmount",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getPoolStats",
+    inputs: [],
+    outputs: [
+      { name: "tvl", type: "uint256" },
+      { name: "redeemed", type: "uint256" },
+      { name: "circulatingSupply", type: "uint256" },
+      { name: "tokenPrice", type: "uint256" },
+      { name: "poolBalance", type: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getHistoryLength",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getRecentSnapshots",
+    inputs: [{ name: "count", type: "uint256" }],
+    outputs: [
+      {
+        type: "tuple[]",
+        components: [
+          { name: "timestamp", type: "uint256" },
+          { name: "tvl", type: "uint256" },
+          { name: "circulatingSupply", type: "uint256" },
+          { name: "tokenPrice", type: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
   // Write functions
-  "function redeemTokens(uint256 tokenAmount) external",
+  {
+    type: "function",
+    name: "redeemTokens",
+    inputs: [{ name: "tokenAmount", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
   // Events
-  "event TokensRedeemed(address indexed user, uint256 tokensBurned, uint256 usdReceived, uint256 tokenPrice)",
+  {
+    type: "event",
+    name: "TokensRedeemed",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "tokensBurned", type: "uint256", indexed: false },
+      { name: "usdReceived", type: "uint256", indexed: false },
+      { name: "tokenPrice", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
-// ReferralManager ABI
+// ReferralManager ABI (JSON format for wagmi v2)
 export const REFERRAL_MANAGER_ABI = [
   // Read functions
-  "function users(address) view returns (address referrer, bool exists, uint256 directReferrals, uint256 totalTeamSize, uint256 totalEarned)",
-  "function isUserRegistered(address user) view returns (bool)",
-  "function getReferralChain(address user) view returns (address[6])",
-  "function getDirectReferrals(address user) view returns (address[])",
-  "function getTeamByLevels(address user) view returns (uint256[6])",
-  "function getUserCommissions(address user) view returns (tuple(address recipient, address buyer, uint256 amount, uint256 level, uint256 timestamp)[])",
-  "function getCommissionCount(address user) view returns (uint256)",
-  "function COMMISSION_LEVELS(uint256 index) view returns (uint256)",
+  {
+    type: "function",
+    name: "users",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [
+      { name: "referrer", type: "address" },
+      { name: "exists", type: "bool" },
+      { name: "directReferrals", type: "uint256" },
+      { name: "totalTeamSize", type: "uint256" },
+      { name: "totalEarned", type: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isUserRegistered",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getReferralChain",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "address[6]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getDirectReferrals",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getTeamByLevels",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256[6]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getUserCommissions",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [
+      {
+        type: "tuple[]",
+        components: [
+          { name: "recipient", type: "address" },
+          { name: "buyer", type: "address" },
+          { name: "amount", type: "uint256" },
+          { name: "level", type: "uint256" },
+          { name: "timestamp", type: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getCommissionCount",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "COMMISSION_LEVELS",
+    inputs: [{ name: "index", type: "uint256" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
   // Events
-  "event CommissionPaid(address indexed recipient, address indexed buyer, uint256 amount, uint256 level, uint256 timestamp)",
+  {
+    type: "event",
+    name: "CommissionPaid",
+    inputs: [
+      { name: "recipient", type: "address", indexed: true },
+      { name: "buyer", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "level", type: "uint256", indexed: false },
+      { name: "timestamp", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
-// LimitlessRewards ABI
+// LimitlessRewards ABI (JSON format for wagmi v2)
 export const LIMITLESS_REWARDS_ABI = [
   // Read functions
-  "function DAILY_REWARD_PER_NFT() view returns (uint256)",
-  "function userRewards(address) view returns (uint256 nftCount, uint256 lastClaimTime, uint256 totalClaimed)",
-  "function calculatePendingRewards(address user) view returns (uint256)",
-  "function getUserRewardInfo(address user) view returns (uint256 nftCount, uint256 lastClaimTime, uint256 totalClaimed, uint256 pendingRewards, uint256 nextClaimTime)",
-  "function getDailyEarningRate(address user) view returns (uint256)",
-  "function getTimeUntilNextClaim(address user) view returns (uint256)",
-  "function hasClaimableRewards(address user) view returns (bool)",
-  "function getGlobalStats() view returns (uint256 totalNFTs, uint256 totalDistributed, uint256 dailyEmissionRate)",
-  "function paused() view returns (bool)",
+  {
+    type: "function",
+    name: "DAILY_REWARD_PER_NFT",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "userRewards",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [
+      { name: "nftCount", type: "uint256" },
+      { name: "lastClaimTime", type: "uint256" },
+      { name: "totalClaimed", type: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "calculatePendingRewards",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getUserRewardInfo",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [
+      { name: "nftCount", type: "uint256" },
+      { name: "lastClaimTime", type: "uint256" },
+      { name: "totalClaimed", type: "uint256" },
+      { name: "pendingRewards", type: "uint256" },
+      { name: "nextClaimTime", type: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getDailyEarningRate",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getTimeUntilNextClaim",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "hasClaimableRewards",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getGlobalStats",
+    inputs: [],
+    outputs: [
+      { name: "totalNFTs", type: "uint256" },
+      { name: "totalDistributed", type: "uint256" },
+      { name: "dailyEmissionRate", type: "uint256" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
   // Write functions
-  "function claimRewards() external",
+  {
+    type: "function",
+    name: "claimRewards",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
   // Events
-  "event RewardsClaimed(address indexed user, uint256 amount, uint256 nftCount, uint256 timestamp)",
+  {
+    type: "event",
+    name: "RewardsClaimed",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+      { name: "nftCount", type: "uint256", indexed: false },
+      { name: "timestamp", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
-// ERC20 ABI (for USDT/USDC)
+// ERC20 ABI (for USDT/USDC) - Using JSON format for wagmi v2 compatibility
 export const ERC20_ABI = [
-  "function name() view returns (string)",
-  "function symbol() view returns (string)",
-  "function decimals() view returns (uint8)",
-  "function balanceOf(address account) view returns (uint256)",
-  "function allowance(address owner, address spender) view returns (uint256)",
-  "function approve(address spender, uint256 amount) returns (bool)",
-  "function transfer(address to, uint256 amount) returns (bool)",
+  {
+    type: "function",
+    name: "name",
+    inputs: [],
+    outputs: [{ type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "symbol",
+    inputs: [],
+    outputs: [{ type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "decimals",
+    inputs: [],
+    outputs: [{ type: "uint8" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "allowance",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "approve",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "transfer",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+    stateMutability: "nonpayable",
+  },
 ] as const;

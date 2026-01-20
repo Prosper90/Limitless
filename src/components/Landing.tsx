@@ -5,12 +5,13 @@ import { useLiquidityPool, useLimitlessNFT } from "../hooks/useLimitless";
 // Hero Section
 const HeroSection: React.FC = () => {
   return (
-    <section className="relative py-20 md:py-32 overflow-hidden">
-      {/* Background gradient effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section className="relative pt-32 md:pt-40 pb-20 md:pb-32 overflow-hidden">
+      {/* Background gradient effects (No need for background gradients since banners exists*/}
+      {/* <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-30 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl" />
-      </div>
+      </div> */}
 
       <div className="container relative z-10">
         <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -334,81 +335,81 @@ const FeaturesSection: React.FC = () => {
 };
 
 // NFT Collection Preview
-const CollectionSection: React.FC = () => {
-  const nfts = [
-    { image: "/art_02.jpg", name: "LIMITLESS #001" },
-    { image: "/art_03.jpg", name: "LIMITLESS #002" },
-    { image: "/art_04.jpg", name: "LIMITLESS #003" },
-    { image: "/art_05.jpg", name: "LIMITLESS #004" },
-  ];
+// const CollectionSection: React.FC = () => {
+//   const nfts = [
+//     { image: "/art_02.jpg", name: "LIMITLESS #001" },
+//     { image: "/art_03.jpg", name: "LIMITLESS #002" },
+//     { image: "/art_04.jpg", name: "LIMITLESS #003" },
+//     { image: "/art_05.jpg", name: "LIMITLESS #004" },
+//   ];
 
-  return (
-    <section className="py-20">
-      <div className="container">
-        <div className="text-center mb-16">
-          <span className="badge badge-primary mb-4">Collection</span>
-          <h2 className="section-title">
-            Explore <span>NFTs</span>
-          </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Each NFT gives you lifetime daily token rewards. Own more, earn
-            more!
-          </p>
-        </div>
+//   return (
+//     <section className="py-20">
+//       <div className="container">
+//         <div className="text-center mb-16">
+//           <span className="badge badge-primary mb-4">Collection</span>
+//           <h2 className="section-title">
+//             Explore <span>NFTs</span>
+//           </h2>
+//           <p className="text-gray-400 max-w-2xl mx-auto">
+//             Each NFT gives you lifetime daily token rewards. Own more, earn
+//             more!
+//           </p>
+//         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {nfts.map((nft, index) => (
-            <div
-              key={index}
-              className="nerko-card p-4 hover-lift animate-fade-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="relative rounded-2xl overflow-hidden mb-4">
-                <img
-                  src={nft.image}
-                  alt={nft.name}
-                  className="w-full aspect-square object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
-                  <Link
-                    to="/buy"
-                    className="btn btn-gradient text-sm py-2 px-4"
-                  >
-                    Buy Now
-                  </Link>
-                </div>
-              </div>
-              <h3 className="font-bold">{nft.name}</h3>
-              <div className="flex justify-between items-center mt-2">
-                <span className="text-gray-400 text-sm">Price</span>
-                <span className="font-bold text-purple-400">$100</span>
-              </div>
-            </div>
-          ))}
-        </div>
+//         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+//           {nfts.map((nft, index) => (
+//             <div
+//               key={index}
+//               className="nerko-card p-4 hover-lift animate-fade-in-up"
+//               style={{ animationDelay: `${index * 100}ms` }}
+//             >
+//               <div className="relative rounded-2xl overflow-hidden mb-4">
+//                 <img
+//                   src={nft.image}
+//                   alt={nft.name}
+//                   className="w-full aspect-square object-cover"
+//                 />
+//                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+//                   <Link
+//                     to="/buy"
+//                     className="btn btn-gradient text-sm py-2 px-4"
+//                   >
+//                     Buy Now
+//                   </Link>
+//                 </div>
+//               </div>
+//               <h3 className="font-bold">{nft.name}</h3>
+//               <div className="flex justify-between items-center mt-2">
+//                 <span className="text-gray-400 text-sm">Price</span>
+//                 <span className="font-bold text-purple-400">$100</span>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
 
-        <div className="text-center mt-12">
-          <Link to="/buy" className="btn btn-gradient btn-gradient-lg">
-            View All & Buy
-            <svg
-              className="ml-2 w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-};
+//         <div className="text-center mt-12">
+//           <Link to="/buy" className="btn btn-gradient btn-gradient-lg">
+//             View All & Buy
+//             <svg
+//               className="ml-2 w-5 h-5"
+//               fill="none"
+//               stroke="currentColor"
+//               viewBox="0 0 24 24"
+//             >
+//               <path
+//                 strokeLinecap="round"
+//                 strokeLinejoin="round"
+//                 strokeWidth={2}
+//                 d="M13 7l5 5m0 0l-5 5m5-5H6"
+//               />
+//             </svg>
+//           </Link>
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
 
 // Commission Structure Section
 const CommissionSection: React.FC = () => {
@@ -636,11 +637,21 @@ const CTASection: React.FC = () => {
 const Landing: React.FC = () => {
   return (
     <main>
+      {/* Banner - fixed to viewport top so it sits behind transparent header */}
+      <div className="fixed w-full h-screen pointer-events-none z-0 left-0 top-0">
+        <div
+          className="absolute bg-[50%_50%] bg-no-repeat bg-cover opacity-10 inset-0"
+          style={{
+            backgroundImage: 'url("/gradient_bg01.png")',
+          }}
+        />
+      </div>
+
       <HeroSection />
       <StatsSection />
       <HowItWorksSection />
       <FeaturesSection />
-      <CollectionSection />
+      {/* <CollectionSection /> */}
       <CommissionSection />
       <FAQSection />
       <CTASection />

@@ -3,50 +3,45 @@ import {
   useLimitlessToken,
   useLimitlessRewards,
   useLiquidityPool,
-  // useLimitlessNFT,
+  useClaimAndBurn,
 } from "../hooks/useLimitless";
 
 export const MyTokens: React.FC = () => {
   const [burnAmount, setBurnAmount] = useState("");
 
   const { tokenBalance, refetchBalance } = useLimitlessToken();
-  // const { userNFTBalance } = useLimitlessNFT();
   const {
     pendingRewards,
-    hasClaimableRewards,
     nftCount,
     totalClaimed,
     lastClaimTime,
-    claimRewards,
-    isPending: isClaiming,
-    isConfirming: isConfirmingClaim,
-    isSuccess: claimSuccess,
   } = useLimitlessRewards();
   const {
     tvl,
     tokenPrice,
-    redeemTokens,
-    isPending: isRedeeming,
-    isConfirming: isConfirmingRedeem,
-    isSuccess: redeemSuccess,
-    error: redeemError,
     minRedemption,
   } = useLiquidityPool();
-
-  const handleClaim = async () => {
-    await claimRewards();
-    refetchBalance();
-  };
+  const {
+    claimAndBurn,
+    hasPendingRewards,
+    isPending: isBurnPending,
+    isConfirming: isBurnConfirming,
+    isSuccess: burnSuccess,
+    error: burnError,
+  } = useClaimAndBurn();
 
   const handleBurn = async () => {
     if (!burnAmount || parseFloat(burnAmount) <= 0) return;
-    await redeemTokens(burnAmount);
+    await claimAndBurn(burnAmount, () => {
+      // Refetch balance after claim completes
+      refetchBalance();
+    });
     refetchBalance();
     setBurnAmount("");
   };
 
   const handleMaxBurn = () => {
-    setBurnAmount(tokenBalance);
+    setBurnAmount(totalAvailable.toString());
   };
 
   // Calculate estimated redemption
@@ -62,11 +57,12 @@ export const MyTokens: React.FC = () => {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
-  const isClaimLoading = isClaiming || isConfirmingClaim;
-  const isBurnLoading = isRedeeming || isConfirmingRedeem;
+  const isBurnLoading = isBurnPending || isBurnConfirming;
+  // Calculate total available (balance + pending rewards)
+  const totalAvailable = parseFloat(tokenBalance) + parseFloat(pendingRewards);
   const canBurn =
     parseFloat(burnAmount) >= parseFloat(minRedemption) &&
-    parseFloat(burnAmount) <= parseFloat(tokenBalance);
+    parseFloat(burnAmount) <= totalAvailable;
 
   return (
     <div className="container py-8">
@@ -78,16 +74,16 @@ export const MyTokens: React.FC = () => {
             Manage Your <span className="gradient-text">Tokens</span>
           </h1>
           <p className="text-gray-400">
-            Claim rewards and redeem tokens for USDT
+            Your tokens grow daily. Redeem anytime for USDT.
           </p>
         </div>
 
         {/* Token Balance Overview */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Current Balance */}
+          {/* Total Available Balance */}
           <div className="nerko-card">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="font-bold text-lg">Token Balance</h2>
+              <h2 className="font-bold text-lg">Total Available</h2>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-600/20 to-pink-600/20 flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-purple-400"
@@ -105,23 +101,26 @@ export const MyTokens: React.FC = () => {
               </div>
             </div>
             <div className="text-4xl font-bold gradient-text mb-1">
-              {parseFloat(tokenBalance).toFixed(4)}
+              {totalAvailable.toFixed(4)}
             </div>
             <p className="text-gray-400 text-sm">LIMITLESS tokens</p>
             <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Current Price</span>
+                <span className="text-gray-400">Wallet Balance</span>
                 <span className="font-medium">
-                  ${parseFloat(tokenPrice).toFixed(6)}
+                  {parseFloat(tokenBalance).toFixed(4)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Accruing Rewards</span>
+                <span className="font-medium text-green-400">
+                  +{parseFloat(pendingRewards).toFixed(4)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm border-t border-white/10 pt-3">
                 <span className="text-gray-400">Total Value</span>
                 <span className="font-bold text-green-400">
-                  $
-                  {(parseFloat(tokenBalance) * parseFloat(tokenPrice)).toFixed(
-                    2,
-                  )}
+                  ${(totalAvailable * parseFloat(tokenPrice)).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -174,110 +173,6 @@ export const MyTokens: React.FC = () => {
           </div>
         </div>
 
-        {/* Claim Rewards Section */}
-        <div className="nerko-card mb-8">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="font-bold text-xl mb-1">Claim Pending Rewards</h2>
-              <p className="text-gray-400 text-sm">
-                Claim your accumulated daily rewards
-              </p>
-            </div>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-green-600/20 to-teal-600/20 flex items-center justify-center">
-              <svg
-                className="w-7 h-7 text-green-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white/5 rounded-2xl">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Pending Rewards</p>
-              <p className="text-4xl font-bold gradient-text">
-                {parseFloat(pendingRewards).toFixed(4)}
-              </p>
-              <p className="text-gray-500 text-sm mt-1">LIMITLESS tokens</p>
-            </div>
-            <button
-              onClick={handleClaim}
-              disabled={!hasClaimableRewards || isClaimLoading}
-              className="btn btn-gradient btn-gradient-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isClaimLoading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Claiming...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Claim Rewards
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </span>
-              )}
-            </button>
-          </div>
-
-          {!hasClaimableRewards && parseInt(nftCount) > 0 && (
-            <p className="text-gray-500 text-sm mt-4 text-center">
-              Rewards accumulate daily. Come back tomorrow to claim more!
-            </p>
-          )}
-
-          {parseInt(nftCount) === 0 && (
-            <p className="text-gray-500 text-sm mt-4 text-center">
-              You need to own at least one NFT to earn daily rewards.
-            </p>
-          )}
-
-          {claimSuccess && (
-            <div className="mt-4 p-4 bg-green-600/20 border border-green-600/30 rounded-xl text-center">
-              <p className="text-green-400 font-semibold">
-                Rewards claimed successfully!
-              </p>
-            </div>
-          )}
-        </div>
-
         {/* Burn Tokens Section */}
         <div className="nerko-card mb-8">
           <div className="flex items-start justify-between mb-6">
@@ -326,8 +221,8 @@ export const MyTokens: React.FC = () => {
                 </button>
               </div>
               <p className="text-gray-500 text-xs mt-2">
-                Minimum: {minRedemption} tokens | Balance:{" "}
-                {parseFloat(tokenBalance).toFixed(4)} tokens
+                Minimum: {minRedemption} tokens | Available:{" "}
+                {totalAvailable.toFixed(4)} tokens
               </p>
             </div>
 
@@ -407,7 +302,13 @@ export const MyTokens: React.FC = () => {
               )}
             </button>
 
-            {redeemSuccess && (
+            {hasPendingRewards && parseFloat(burnAmount) > 0 && (
+              <p className="text-gray-500 text-xs text-center">
+                Your pending rewards will be automatically claimed before burning.
+              </p>
+            )}
+
+            {burnSuccess && (
               <div className="p-4 bg-green-600/20 border border-green-600/30 rounded-xl text-center">
                 <p className="text-green-400 font-semibold">
                   Tokens burned and USDT redeemed successfully!
@@ -415,11 +316,11 @@ export const MyTokens: React.FC = () => {
               </div>
             )}
 
-            {redeemError && (
+            {burnError && (
               <div className="p-4 bg-red-600/20 border border-red-600/30 rounded-xl text-center">
                 <p className="text-red-400 font-semibold">Transaction failed</p>
                 <p className="text-gray-400 text-sm mt-1">
-                  {redeemError.message}
+                  {burnError.message}
                 </p>
               </div>
             )}

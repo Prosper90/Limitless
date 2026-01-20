@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAccount } from "wagmi";
 import { useLimitlessNFT, useStablecoin } from "../hooks/useLimitless";
+import { CONTRACTS } from "../utils/contracts";
 
 export const BuyNFT: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -27,7 +28,22 @@ export const BuyNFT: React.FC = () => {
     isConfirming: isConfirmingApprove,
     isSuccess: approveSuccess,
     refetchAllowance,
+    hash: approveHash,
   } = useStablecoin();
+
+  // const {
+  //   data: balanceUSDT,
+  //   isLoading: balanceLoading,
+  //   error: balanceError,
+  // } = useTokenBalance(CONTRACTS.STABLECOIN as `0x${string}`, address);
+
+  // Debug logging
+  console.log("STABLECOIN Address:", CONTRACTS.STABLECOIN);
+  console.log("User Address:", address);
+  // console.log("Balance from useTokenBalance:", balanceUSDT?.toString());
+  // console.log("Balance from useStablecoin:", balance);
+  // console.log("Balance Loading:", balanceLoading);
+  // console.log("Balance Error:", balanceError);
 
   // Check for referrer in URL
   useEffect(() => {
@@ -48,12 +64,22 @@ export const BuyNFT: React.FC = () => {
     }
   }, [allowance, nftPrice]);
 
-  // Refetch allowance after approval
+  // Refetch allowance after approval - use a ref to prevent multiple refetches
+  const lastApproveHash = React.useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (approveSuccess) {
-      refetchAllowance();
+    if (
+      approveSuccess &&
+      approveHash &&
+      approveHash !== lastApproveHash.current
+    ) {
+      lastApproveHash.current = approveHash;
+      // Small delay to ensure blockchain state is updated
+      const timer = setTimeout(() => {
+        refetchAllowance();
+      }, 1000);
+      return () => clearTimeout(timer);
     }
-  }, [approveSuccess, refetchAllowance]);
+  }, [approveSuccess, approveHash, refetchAllowance]);
 
   const handleApprove = async () => {
     await approve(nftPrice);

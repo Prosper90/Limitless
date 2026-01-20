@@ -48,7 +48,7 @@ export const Dashboard: React.FC = () => {
   const { totalMinted, userNFTBalance } = useLimitlessNFT();
   const { tokenBalance, circulatingSupply } = useLimitlessToken();
   const { tvl, tokenPrice } = useLiquidityPool();
-  const { pendingRewards, hasClaimableRewards } = useLimitlessRewards();
+  const { pendingRewards } = useLimitlessRewards();
   const { totalTeamSize, totalEarned } = useReferralManager();
 
   //totalRewardsDistributed,
@@ -142,10 +142,10 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-lg group-hover:text-green-400 transition-colors">
-                Claim Rewards
+                My Rewards
               </h3>
               <p className="text-gray-400 text-sm">
-                {formatNumber(pendingRewards)} pending
+                +{formatNumber(pendingRewards)} accruing
               </p>
             </div>
             <svg
@@ -253,10 +253,10 @@ export const Dashboard: React.FC = () => {
             }
           />
           <StatCard
-            title="Pending Rewards"
-            value={formatNumber(pendingRewards)}
-            subtitle={hasClaimableRewards ? "Ready to claim!" : "Keep holding"}
-            gradient={hasClaimableRewards}
+            title="Accruing Rewards"
+            value={"+" + formatNumber(pendingRewards)}
+            subtitle="Growing daily"
+            gradient={parseFloat(pendingRewards) > 0}
             icon={
               <svg
                 className="w-6 h-6"

@@ -1,27 +1,31 @@
+import "@rainbow-me/rainbowkit/styles.css";
 import React, { createContext, useContext } from "react";
-import { WagmiProvider, createConfig, http } from "wagmi";
+import { WagmiProvider, http } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ConnectKitProvider, getDefaultConfig } from "connectkit";
-import { bsc, bscTestnet } from "wagmi/chains";
+import {
+  RainbowKitProvider,
+  getDefaultConfig,
+  darkTheme,
+} from "@rainbow-me/rainbowkit";
+import { bsc, bscTestnet, sepolia } from "wagmi/chains";
 
 // Use testnet for development, mainnet for production
-const activeChain = import.meta.env.VITE_USE_MAINNET === "true" ? bsc : bscTestnet;
+const activeChain = import.meta.env.VITE_USE_MAINNET === "true" ? bsc : sepolia;
 
-// Create wagmi config
-const config = createConfig(
-  getDefaultConfig({
-    appName: "LIMITLESS",
-    appDescription: "LIMITLESS-UNLIMITED NFT Platform",
-    appUrl: "https://limitless.io",
-    appIcon: "/logo.png",
-    walletConnectProjectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "8897acdd1a57d5021ad08b901938ae48",
-    chains: [activeChain],
-    transports: {
-      [bsc.id]: http(),
-      [bscTestnet.id]: http(),
-    },
-  })
-);
+// Create wagmi config with RainbowKit
+const config = getDefaultConfig({
+  appName: "LIMITLESS",
+  projectId:
+    import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ||
+    "8897acdd1a57d5021ad08b901938ae48",
+  chains: [activeChain],
+  transports: {
+    [bsc.id]: http(),
+    [bscTestnet.id]: http(),
+    [sepolia.id]: http(),
+  },
+  ssr: false,
+});
 
 // Create query client
 const queryClient = new QueryClient({
@@ -29,6 +33,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 2,
       staleTime: 30000,
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -40,7 +45,7 @@ interface Web3ContextType {
 
 const Web3Context = createContext<Web3ContextType>({
   chainId: activeChain.id,
-  isTestnet: activeChain.id === bscTestnet.id,
+  isTestnet: activeChain.id === sepolia.id,
 });
 
 export const useWeb3 = () => {
@@ -58,25 +63,25 @@ interface Web3ProviderProps {
 export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
   const contextValue: Web3ContextType = {
     chainId: activeChain.id,
-    isTestnet: activeChain.id === bscTestnet.id,
+    isTestnet: activeChain.id === sepolia.id,
   };
+
+  // || activeChain.id === bscTestnet.id
 
   return (
     <Web3Context.Provider value={contextValue}>
       <WagmiProvider config={config}>
         <QueryClientProvider client={queryClient}>
-          <ConnectKitProvider
-            theme="midnight"
-            customTheme={{
-              "--ck-border-radius": "12px",
-              "--ck-font-family": "Inter, system-ui, sans-serif",
-              "--ck-primary-button-background": "#3B82F6",
-              "--ck-primary-button-hover-background": "#2563EB",
-              "--ck-primary-button-color": "#FFFFFF",
-            }}
+          <RainbowKitProvider
+            theme={darkTheme({
+              accentColor: "#9333ea",
+              accentColorForeground: "white",
+              borderRadius: "medium",
+              fontStack: "system",
+            })}
           >
             {children}
-          </ConnectKitProvider>
+          </RainbowKitProvider>
         </QueryClientProvider>
       </WagmiProvider>
     </Web3Context.Provider>
