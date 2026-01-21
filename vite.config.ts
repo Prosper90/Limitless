@@ -9,4 +9,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    include: ['react-is', 'recharts'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/react-is/, /node_modules/],
+    },
+  },
 })
