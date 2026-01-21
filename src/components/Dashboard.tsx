@@ -7,6 +7,7 @@ import {
   useLimitlessRewards,
   useReferralManager,
 } from "../hooks/useLimitless";
+import { TokenPriceChart } from "./TokenPriceChart";
 
 // Stat Card Component
 interface StatCardProps {
@@ -48,10 +49,13 @@ export const Dashboard: React.FC = () => {
   const { totalMinted, userNFTBalance } = useLimitlessNFT();
   const { tokenBalance, circulatingSupply } = useLimitlessToken();
   const { tvl, tokenPrice } = useLiquidityPool();
-  const { pendingRewards } = useLimitlessRewards();
+  const { pendingRewards, globalPendingEstimate, totalNFTsMinted } = useLimitlessRewards();
   const { totalTeamSize, totalEarned } = useReferralManager();
 
-  //totalRewardsDistributed,
+  // Calculate real-time circulating supply (minted + pending rewards globally)
+  const realtimeCirculation = (
+    parseFloat(circulatingSupply) + parseFloat(globalPendingEstimate)
+  ).toString();
   // Format large numbers
   const formatNumber = (num: string) => {
     const n = parseFloat(num);
@@ -310,8 +314,8 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Tokens in Circulation"
-            value={formatNumber(circulatingSupply)}
-            subtitle="LIMITLESS tokens"
+            value={formatNumber(realtimeCirculation)}
+            subtitle={`+${formatNumber(globalPendingEstimate)} pending`}
           />
           <StatCard
             title="Total Value Locked"
@@ -325,6 +329,15 @@ export const Dashboard: React.FC = () => {
             subtitle="Current price per token"
           />
         </div>
+      </section>
+
+      {/* Price Chart */}
+      <section className="mb-10">
+        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          <span className="w-2 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></span>
+          Analytics
+        </h2>
+        <TokenPriceChart />
       </section>
 
       {/* How It Works */}
