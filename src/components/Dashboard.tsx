@@ -49,7 +49,8 @@ export const Dashboard: React.FC = () => {
   const { totalMinted, userNFTBalance } = useLimitlessNFT();
   const { tokenBalance, circulatingSupply } = useLimitlessToken();
   const { tvl, tokenPrice } = useLiquidityPool();
-  const { pendingRewards, globalPendingEstimate, totalNFTsMinted } = useLimitlessRewards();
+  //totalNFTsMinted
+  const { pendingRewards, globalPendingEstimate } = useLimitlessRewards();
   const { totalTeamSize, totalEarned } = useReferralManager();
 
   // Calculate real-time circulating supply (minted + pending rewards globally)
