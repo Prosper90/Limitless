@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   useLimitlessNFT,
-  useLimitlessToken,
   useLiquidityPool,
   useLimitlessRewards,
   useReferralManager,
@@ -47,16 +46,10 @@ const StatCard: React.FC<StatCardProps> = ({
 
 export const Dashboard: React.FC = () => {
   const { totalMinted, userNFTBalance } = useLimitlessNFT();
-  const { tokenBalance, circulatingSupply } = useLimitlessToken();
   const { tvl, tokenPrice } = useLiquidityPool();
-  //totalNFTsMinted
-  const { pendingRewards, globalPendingEstimate } = useLimitlessRewards();
+  const { pendingRewards } = useLimitlessRewards();
   const { totalTeamSize, totalEarned } = useReferralManager();
 
-  // Calculate real-time circulating supply (minted + pending rewards globally)
-  const realtimeCirculation = (
-    parseFloat(circulatingSupply) + parseFloat(globalPendingEstimate)
-  ).toString();
   // Format large numbers
   const formatNumber = (num: string) => {
     const n = parseFloat(num);
@@ -239,8 +232,9 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Token Balance"
-            value={formatNumber(tokenBalance)}
-            subtitle="LIMITLESS tokens"
+            value={formatNumber(pendingRewards)}
+            subtitle="Accrued LIMITLESS tokens"
+            gradient={parseFloat(pendingRewards) > 0}
             icon={
               <svg
                 className="w-6 h-6"
@@ -258,10 +252,10 @@ export const Dashboard: React.FC = () => {
             }
           />
           <StatCard
-            title="Accruing Rewards"
-            value={"+" + formatNumber(pendingRewards)}
-            subtitle="Growing daily"
-            gradient={parseFloat(pendingRewards) > 0}
+            title="Daily Earning"
+            value={"+" + userNFTBalance + "/day"}
+            subtitle="Based on your NFTs"
+            gradient={parseInt(userNFTBalance) > 0}
             icon={
               <svg
                 className="w-6 h-6"
@@ -314,9 +308,9 @@ export const Dashboard: React.FC = () => {
             subtitle="LIMITLESS NFTs minted"
           />
           <StatCard
-            title="Tokens in Circulation"
-            value={formatNumber(realtimeCirculation)}
-            subtitle={`+${formatNumber(globalPendingEstimate)} pending`}
+            title="Total Accrued"
+            value={formatNumber(pendingRewards)}
+            subtitle="Tokens accrued ecosystem-wide"
           />
           <StatCard
             title="Total Value Locked"

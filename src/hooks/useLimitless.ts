@@ -20,6 +20,9 @@ import {
 const DAILY_REWARD_PER_NFT = 1; // 1 token per NFT per day
 const SECONDS_PER_DAY = 86400;
 
+// Contract deployment date (2025-01-19) - used for global circulation calculation
+const CONTRACT_DEPLOYMENT_TIMESTAMP = new Date("2025-01-19T00:00:00Z").getTime() / 1000;
+
 // Hook for NFT operations
 export function useLimitlessNFT() {
   const { address } = useAccount();
@@ -280,19 +283,22 @@ export function useLimitlessRewards() {
     setRealtimePendingRewards(pendingRewards.toFixed(6));
   }, [nftCount, lastClaimTime]);
 
-  // Calculate global pending rewards estimate
+  // Calculate global circulation (total accrued by all NFT holders)
   const calculateGlobalPending = useCallback(() => {
     if (totalNFTsMinted === 0) {
       setRealtimeGlobalPending("0");
       return;
     }
 
-    // Estimate: assume average user hasn't claimed for 12 hours (0.5 days)
-    // This is a rough estimate since we can't iterate all users
-    const estimatedAvgDaysUnclaimed = 0.5;
-    const globalPending = totalNFTsMinted * estimatedAvgDaysUnclaimed * DAILY_REWARD_PER_NFT;
+    // Calculate days since contract deployment
+    const now = Math.floor(Date.now() / 1000);
+    const daysSinceDeployment = (now - CONTRACT_DEPLOYMENT_TIMESTAMP) / SECONDS_PER_DAY;
 
-    setRealtimeGlobalPending(globalPending.toFixed(2));
+    // Global circulation = totalNFTsMinted × daysSinceDeployment × dailyReward
+    // This represents the total tokens accrued by all NFT holders
+    const globalCirculation = totalNFTsMinted * daysSinceDeployment * DAILY_REWARD_PER_NFT;
+
+    setRealtimeGlobalPending(globalCirculation.toFixed(6));
   }, [totalNFTsMinted]);
 
   // Real-time update interval (every second for smooth animation)
@@ -302,6 +308,7 @@ export function useLimitlessRewards() {
 
     const interval = setInterval(() => {
       calculateRealtimeRewards();
+      calculateGlobalPending(); // Also update global circulation in real-time
     }, 1000); // Update every second
 
     return () => clearInterval(interval);
