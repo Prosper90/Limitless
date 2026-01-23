@@ -412,178 +412,178 @@ const FeaturesSection: React.FC = () => {
 // };
 
 // Commission Structure Section
-const CommissionSection: React.FC = () => {
-  const levels = [
-    { level: 1, commission: "$10", description: "Direct Referral" },
-    { level: 2, commission: "$5", description: "2nd Generation" },
-    { level: 3, commission: "$4", description: "3rd Generation" },
-    { level: 4, commission: "$3", description: "4th Generation" },
-    { level: 5, commission: "$2", description: "5th Generation" },
-    { level: 6, commission: "$1", description: "6th Generation" },
-  ];
+// const CommissionSection: React.FC = () => {
+//   const levels = [
+//     { level: 1, commission: "$10", description: "Direct Referral" },
+//     { level: 2, commission: "$5", description: "2nd Generation" },
+//     { level: 3, commission: "$4", description: "3rd Generation" },
+//     { level: 4, commission: "$3", description: "4th Generation" },
+//     { level: 5, commission: "$2", description: "5th Generation" },
+//     { level: 6, commission: "$1", description: "6th Generation" },
+//   ];
 
-  return (
-    <section className="py-20 bg-white/[0.02]">
-      <div className="container">
-        <div className="text-center mb-16">
-          <span className="badge badge-primary mb-4">Referral Program</span>
-          <h2 className="section-title">
-            Earn <span>$25</span> Per Sale
-          </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Build your team and earn passive income through our 6-level referral
-            system
-          </p>
-        </div>
+//   return (
+//     <section className="py-20 bg-white/[0.02]">
+//       <div className="container">
+//         <div className="text-center mb-16">
+//           <span className="badge badge-primary mb-4">Referral Program</span>
+//           <h2 className="section-title">
+//             Earn <span>$25</span> Per Sale
+//           </h2>
+//           <p className="text-gray-400 max-w-2xl mx-auto">
+//             Build your team and earn passive income through our 6-level referral
+//             system
+//           </p>
+//         </div>
 
-        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {levels.map((level, index) => (
-            <div
-              key={index}
-              className="nerko-card text-center hover-lift animate-fade-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div
-                className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold
-                ${
-                  index === 0
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600"
-                    : index === 1
-                      ? "bg-blue-600"
-                      : index === 2
-                        ? "bg-green-600"
-                        : index === 3
-                          ? "bg-yellow-600"
-                          : index === 4
-                            ? "bg-orange-600"
-                            : "bg-red-600"
-                }`}
-              >
-                L{level.level}
-              </div>
-              <div className="text-3xl font-bold gradient-text mb-2">
-                {level.commission}
-              </div>
-              <p className="text-gray-400 text-sm">{level.description}</p>
-            </div>
-          ))}
-        </div>
+//         <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+//           {levels.map((level, index) => (
+//             <div
+//               key={index}
+//               className="nerko-card text-center hover-lift animate-fade-in-up"
+//               style={{ animationDelay: `${index * 100}ms` }}
+//             >
+//               <div
+//                 className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold
+//                 ${
+//                   index === 0
+//                     ? "bg-gradient-to-r from-purple-600 to-pink-600"
+//                     : index === 1
+//                       ? "bg-blue-600"
+//                       : index === 2
+//                         ? "bg-green-600"
+//                         : index === 3
+//                           ? "bg-yellow-600"
+//                           : index === 4
+//                             ? "bg-orange-600"
+//                             : "bg-red-600"
+//                 }`}
+//               >
+//                 L{level.level}
+//               </div>
+//               <div className="text-3xl font-bold gradient-text mb-2">
+//                 {level.commission}
+//               </div>
+//               <p className="text-gray-400 text-sm">{level.description}</p>
+//             </div>
+//           ))}
+//         </div>
 
-        <div className="mt-16 nerko-card max-w-3xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-2xl font-bold mb-2">
-                Start Building Your Team
-              </h3>
-              <p className="text-gray-400">
-                Get your referral link and start earning today
-              </p>
-            </div>
-            <Link to="/team" className="btn btn-gradient">
-              My Referral Link
-              <svg
-                className="ml-2 w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
+//         <div className="mt-16 nerko-card max-w-3xl mx-auto">
+//           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+//             <div>
+//               <h3 className="text-2xl font-bold mb-2">
+//                 Start Building Your Team
+//               </h3>
+//               <p className="text-gray-400">
+//                 Get your referral link and start earning today
+//               </p>
+//             </div>
+//             <Link to="/team" className="btn btn-gradient">
+//               My Referral Link
+//               <svg
+//                 className="ml-2 w-5 h-5"
+//                 fill="none"
+//                 stroke="currentColor"
+//                 viewBox="0 0 24 24"
+//               >
+//                 <path
+//                   strokeLinecap="round"
+//                   strokeLinejoin="round"
+//                   strokeWidth={2}
+//                   d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+//                 />
+//               </svg>
+//             </Link>
+//           </div>
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
 
 // FAQ Section
-const FAQSection: React.FC = () => {
-  const [openIndex, setOpenIndex] = React.useState<number | null>(0);
+// const FAQSection: React.FC = () => {
+//   const [openIndex, setOpenIndex] = React.useState<number | null>(0);
 
-  const faqs = [
-    {
-      question: "What is LIMITLESS?",
-      answer:
-        "LIMITLESS is a DeFi NFT platform on BSC where you can purchase NFTs that earn you daily token rewards forever. Each NFT costs $100 USDT and generates 1 LIMITLESS token per day.",
-    },
-    {
-      question: "How do I earn daily rewards?",
-      answer:
-        "Simply hold NFTs in your wallet. Each NFT earns 1 LIMITLESS token per day. You can claim your accumulated rewards anytime from the My Tokens page.",
-    },
-    {
-      question: "How does the referral system work?",
-      answer:
-        "When someone purchases an NFT using your referral link, $25 from their purchase is distributed across 6 levels: $10 to L1, $5 to L2, $4 to L3, $3 to L4, $2 to L5, and $1 to L6.",
-    },
-    {
-      question: "What can I do with LIMITLESS tokens?",
-      answer:
-        "You can burn (redeem) your LIMITLESS tokens for USDT from the liquidity pool at the current token price, or hold them as the value grows with the ecosystem.",
-    },
-    {
-      question: "Is this safe and audited?",
-      answer:
-        "Yes, our smart contracts are deployed on BSC (Binance Smart Chain) and follow industry best practices. The liquidity pool is transparent and on-chain.",
-    },
-  ];
+//   const faqs = [
+//     {
+//       question: "What is LIMITLESS?",
+//       answer:
+//         "LIMITLESS is a DeFi NFT platform on BSC where you can purchase NFTs that earn you daily token rewards forever. Each NFT costs $100 USDT and generates 1 LIMITLESS token per day.",
+//     },
+//     {
+//       question: "How do I earn daily rewards?",
+//       answer:
+//         "Simply hold NFTs in your wallet. Each NFT earns 1 LIMITLESS token per day. You can claim your accumulated rewards anytime from the My Tokens page.",
+//     },
+//     {
+//       question: "How does the referral system work?",
+//       answer:
+//         "When someone purchases an NFT using your referral link, $25 from their purchase is distributed across 6 levels: $10 to L1, $5 to L2, $4 to L3, $3 to L4, $2 to L5, and $1 to L6.",
+//     },
+//     {
+//       question: "What can I do with LIMITLESS tokens?",
+//       answer:
+//         "You can burn (redeem) your LIMITLESS tokens for USDT from the liquidity pool at the current token price, or hold them as the value grows with the ecosystem.",
+//     },
+//     {
+//       question: "Is this safe and audited?",
+//       answer:
+//         "Yes, our smart contracts are deployed on BSC (Binance Smart Chain) and follow industry best practices. The liquidity pool is transparent and on-chain.",
+//     },
+//   ];
 
-  return (
-    <section className="py-20">
-      <div className="container max-w-4xl">
-        <div className="text-center mb-16">
-          <span className="badge badge-primary mb-4">FAQ</span>
-          <h2 className="section-title">
-            Frequently <span>Asked</span>
-          </h2>
-        </div>
+//   return (
+//     <section className="py-20">
+//       <div className="container max-w-4xl">
+//         <div className="text-center mb-16">
+//           <span className="badge badge-primary mb-4">FAQ</span>
+//           <h2 className="section-title">
+//             Frequently <span>Asked</span>
+//           </h2>
+//         </div>
 
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="nerko-card cursor-pointer animate-fade-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => setOpenIndex(openIndex === index ? null : index)}
-            >
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-lg pr-4">{faq.question}</h3>
-                <div
-                  className={`w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center transition-transform ${openIndex === index ? "rotate-180" : ""}`}
-                >
-                  <svg
-                    className="w-5 h-5 text-purple-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
-              {openIndex === index && (
-                <p className="text-gray-400 mt-4 pt-4 border-t border-white/10">
-                  {faq.answer}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-};
+//         <div className="space-y-4">
+//           {faqs.map((faq, index) => (
+//             <div
+//               key={index}
+//               className="nerko-card cursor-pointer animate-fade-in-up"
+//               style={{ animationDelay: `${index * 100}ms` }}
+//               onClick={() => setOpenIndex(openIndex === index ? null : index)}
+//             >
+//               <div className="flex justify-between items-center">
+//                 <h3 className="font-bold text-lg pr-4">{faq.question}</h3>
+//                 <div
+//                   className={`w-8 h-8 rounded-full bg-purple-600/20 flex items-center justify-center transition-transform ${openIndex === index ? "rotate-180" : ""}`}
+//                 >
+//                   <svg
+//                     className="w-5 h-5 text-purple-400"
+//                     fill="none"
+//                     stroke="currentColor"
+//                     viewBox="0 0 24 24"
+//                   >
+//                     <path
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                       strokeWidth={2}
+//                       d="M19 9l-7 7-7-7"
+//                     />
+//                   </svg>
+//                 </div>
+//               </div>
+//               {openIndex === index && (
+//                 <p className="text-gray-400 mt-4 pt-4 border-t border-white/10">
+//                   {faq.answer}
+//                 </p>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
 
 // CTA Section
 const CTASection: React.FC = () => {
@@ -652,8 +652,8 @@ const Landing: React.FC = () => {
       <HowItWorksSection />
       <FeaturesSection />
       {/* <CollectionSection /> */}
-      <CommissionSection />
-      <FAQSection />
+      {/* <CommissionSection /> */}
+      {/* <FAQSection /> */}
       <CTASection />
     </main>
   );
