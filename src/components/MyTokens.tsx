@@ -10,17 +10,9 @@ export const MyTokens: React.FC = () => {
   const [burnAmount, setBurnAmount] = useState("");
 
   const { tokenBalance, refetchBalance } = useLimitlessToken();
-  const {
-    pendingRewards,
-    nftCount,
-    totalClaimed,
-    lastClaimTime,
-  } = useLimitlessRewards();
-  const {
-    tvl,
-    tokenPrice,
-    minRedemption,
-  } = useLiquidityPool();
+  const { pendingRewards, nftCount, totalClaimed, lastClaimTime } =
+    useLimitlessRewards();
+  const { tvl, tokenPrice, minRedemption } = useLiquidityPool();
   const {
     claimAndBurn,
     hasPendingRewards,
@@ -129,7 +121,7 @@ export const MyTokens: React.FC = () => {
           {/* Rewards Info */}
           <div className="nerko-card">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="font-bold text-lg">Daily Rewards</h2>
+              <h2 className="font-bold text-lg">Daily Awards</h2>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-green-600/20 to-teal-600/20 flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-green-400"
@@ -304,7 +296,8 @@ export const MyTokens: React.FC = () => {
 
             {hasPendingRewards && parseFloat(burnAmount) > 0 && (
               <p className="text-gray-500 text-xs text-center">
-                Your pending rewards will be automatically claimed before burning.
+                Your pending rewards will be automatically claimed before
+                burning.
               </p>
             )}
 

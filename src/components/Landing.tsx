@@ -19,8 +19,8 @@ const HeroSection: React.FC = () => {
           <div className="animate-fade-in-up">
             <span className="badge badge-primary mb-4">NFT Platform</span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Build Your <span className="gradient-text">Limitless</span> NFT
-              Portfolio
+              Join our <span className="gradient-text">Limitless</span>{" "}
+              communities today
             </h1>
             <p className="text-gray-400 text-lg mb-8 max-w-lg">
               Earn daily token rewards, build your referral network, and grow
@@ -43,9 +43,9 @@ const HeroSection: React.FC = () => {
                   />
                 </svg>
               </Link>
-              <Link to="/tokens" className="btn btn-outline">
+              {/* <Link to="/tokens" className="btn btn-outline">
                 My Tokens
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -93,10 +93,12 @@ const StatsSection: React.FC = () => {
       label: "Token Price",
     },
     {
-      value: parseFloat(circulatingSupply || "0").toLocaleString(),
-      label: "Tokens Circulating",
+      value: "1 Quadrillion Tokens",
+      label: "Total Token Supply",
     },
   ];
+
+  //parseFloat(circulatingSupply || "0").toLocaleString()
 
   return (
     <section className="py-16 border-y border-white/5">
@@ -121,13 +123,13 @@ const StatsSection: React.FC = () => {
 // How It Works Section
 const HowItWorksSection: React.FC = () => {
   const steps = [
-    {
-      number: "01",
-      title: "Connect Wallet",
-      description:
-        "Connect your BSC wallet to get started. We support MetaMask, Trust Wallet, and more.",
-      image: "/mint-01.png",
-    },
+    // {
+    //   number: "01",
+    //   title: "Connect Wallet",
+    //   description:
+    //     "Connect your BSC wallet to get started. We support MetaMask, Trust Wallet, and more.",
+    //   image: "/mint-01.png",
+    // },
     {
       number: "02",
       title: "Buy NFT",
@@ -137,16 +139,23 @@ const HowItWorksSection: React.FC = () => {
     },
     {
       number: "03",
-      title: "Earn Daily",
+      title: "Recieve Your Daily Reward",
       description:
         "Claim your daily LIMITLESS tokens. The more NFTs you own, the more you earn.",
       image: "/mint-03.png",
     },
     {
       number: "04",
-      title: "Build Team",
+      title: "Build Limitless Community",
       description:
         "Refer friends and earn up to $25 commission per NFT sale across 6 levels.",
+      image: "/mint-04.png",
+    },
+
+    {
+      number: "05",
+      title: "Transparency",
+      description: "Track all limitless transactions on BSC Blockchain.",
       image: "/mint-04.png",
     },
   ];
@@ -211,7 +220,7 @@ const FeaturesSection: React.FC = () => {
           />
         </svg>
       ),
-      title: "Daily Token Rewards",
+      title: " Recieve Daily Token Rewards",
       description:
         "Earn 1 LIMITLESS token per day for each NFT you own. Rewards accumulate and can be claimed anytime.",
     },
@@ -599,7 +608,7 @@ const CTASection: React.FC = () => {
 
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-              Ready to Go <span className="gradient-text">LIMITLESS</span>?
+              Explore <span className="gradient-text">LIMITLESS</span> Ecoystem
             </h2>
             <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
               Join thousands of users earning daily rewards. Start your journey
