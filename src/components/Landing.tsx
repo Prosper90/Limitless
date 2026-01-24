@@ -79,7 +79,8 @@ const HeroSection: React.FC = () => {
 
 // Stats Section
 const StatsSection: React.FC = () => {
-  const { tvl, tokenPrice, circulatingSupply } = useLiquidityPool();
+  const { tvl, tokenPrice } = useLiquidityPool();
+  //circulatingSupply
   const { totalMinted } = useLimitlessNFT();
 
   const stats = [
