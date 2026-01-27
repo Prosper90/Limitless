@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   useLimitlessNFT,
-  useLiquidityPool,
+  useBuybackPool,
   useLimitlessRewards,
   useReferralManager,
 } from "../hooks/useLimitless";
@@ -46,7 +46,7 @@ const StatCard: React.FC<StatCardProps> = ({
 
 export const Dashboard: React.FC = () => {
   const { totalMinted, userNFTBalance } = useLimitlessNFT();
-  const { tvl, tokenPrice } = useLiquidityPool();
+  const { totalUsdtSpent, tokenPrice } = useBuybackPool();
   const { pendingRewards } = useLimitlessRewards();
   const { totalTeamSize, totalEarned } = useReferralManager();
 
@@ -313,15 +313,15 @@ export const Dashboard: React.FC = () => {
             subtitle="Tokens accrued ecosystem-wide"
           />
           <StatCard
-            title="Total Value Locked"
-            value={formatUSD(tvl)}
-            subtitle="In liquidity pool"
+            title="Total Buyback Volume"
+            value={formatUSD(totalUsdtSpent)}
+            subtitle="USDT spent on buybacks"
             gradient
           />
           <StatCard
             title="Token Price"
             value={formatUSD(tokenPrice)}
-            subtitle="Current price per token"
+            subtitle="Current DEX price"
           />
         </div>
       </section>
@@ -346,8 +346,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="font-bold mb-2">Purchase NFT</h3>
               <p className="text-gray-400 text-sm">
-                Buy a LIMITLESS NFT for $100 USDT. This gives you lifetime token
-                rewards.
+                Buy a LIMITLESS NFT for $100 USDT. $25 goes to buyback, increasing token price.
               </p>
             </div>
           </div>
@@ -370,8 +369,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="font-bold mb-2">Redeem Anytime</h3>
               <p className="text-gray-400 text-sm">
-                Burn your tokens to redeem USDT from the liquidity pool at
-                current price.
+                Sell your tokens on PancakeSwap at market price to get USDT.
               </p>
             </div>
           </div>

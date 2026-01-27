@@ -8,9 +8,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useLiquidityPoolHistory } from "../hooks/useLimitless";
+import { useBuybackPoolHistory } from "../hooks/useLimitless";
 
-type ChartMetric = "tokenPrice" | "tvl" | "circulatingSupply";
+type ChartMetric = "tokenPrice" | "totalBought" | "poolBalance";
 
 interface MetricConfig {
   key: ChartMetric;
@@ -29,17 +29,17 @@ const metrics: MetricConfig[] = [
     format: (v) => `$${v.toFixed(4)}`,
   },
   {
-    key: "tvl",
-    label: "TVL",
+    key: "totalBought",
+    label: "Tokens Bought",
     color: "#22c55e",
-    gradientId: "colorTvl",
-    format: (v) => `$${v >= 1000 ? (v / 1000).toFixed(1) + "K" : v.toFixed(2)}`,
+    gradientId: "colorBought",
+    format: (v) => (v >= 1000 ? (v / 1000).toFixed(1) + "K" : v.toFixed(2)),
   },
   {
-    key: "circulatingSupply",
-    label: "Circulating Supply",
+    key: "poolBalance",
+    label: "Pool Balance",
     color: "#3b82f6",
-    gradientId: "colorSupply",
+    gradientId: "colorBalance",
     format: (v) => (v >= 1000 ? (v / 1000).toFixed(1) + "K" : v.toFixed(0)),
   },
 ];
@@ -70,7 +70,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
 
 export const TokenPriceChart: React.FC = () => {
   const [selectedMetric, setSelectedMetric] = useState<ChartMetric>("tokenPrice");
-  const { chartData, isLoading, historyLength } = useLiquidityPoolHistory(30);
+  const { chartData, isLoading, historyLength } = useBuybackPoolHistory(30);
 
   const currentMetric = metrics.find((m) => m.key === selectedMetric)!;
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useLiquidityPool, useLimitlessNFT } from "../hooks/useLimitless";
+import { useBuybackPool, useLimitlessNFT } from "../hooks/useLimitless";
 
 // Hero Section
 const HeroSection: React.FC = () => {
@@ -79,14 +79,13 @@ const HeroSection: React.FC = () => {
 
 // Stats Section
 const StatsSection: React.FC = () => {
-  const { tvl, tokenPrice } = useLiquidityPool();
-  //circulatingSupply
+  const { totalUsdtSpent, tokenPrice } = useBuybackPool();
   const { totalMinted } = useLimitlessNFT();
 
   const stats = [
     {
-      value: `$${parseFloat(tvl || "0").toLocaleString()}`,
-      label: "Total Value Locked",
+      value: `$${parseFloat(totalUsdtSpent || "0").toLocaleString()}`,
+      label: "Total Buyback Volume",
     },
     { value: totalMinted || "0", label: "NFTs Minted" },
     {
@@ -267,9 +266,9 @@ const FeaturesSection: React.FC = () => {
           />
         </svg>
       ),
-      title: "Burn & Redeem",
+      title: "Trade & Redeem",
       description:
-        "Burn your tokens anytime to redeem USDT from the liquidity pool at the current market price.",
+        "Sell your tokens anytime on PancakeSwap at the current market price to get USDT.",
     },
     {
       icon: (

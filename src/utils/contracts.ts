@@ -1,4 +1,4 @@
-// Contract addresses - Deployed to Sepolia on 2025-01-19
+// Contract addresses - Will be deployed to Polygon
 export const CONTRACTS = {
   LIMITLESS_NFT:
     import.meta.env.VITE_NFT_ADDRESS ||
@@ -6,7 +6,7 @@ export const CONTRACTS = {
   LIMITLESS_TOKEN:
     import.meta.env.VITE_TOKEN_ADDRESS ||
     "0x9052E962Fb16d3CF9D2BDE669ABA49e8C0c3769A",
-  LIQUIDITY_POOL:
+  BUYBACK_POOL:
     import.meta.env.VITE_POOL_ADDRESS ||
     "0xE07fa79957741F46E4934cD9303234c9fB419d90",
   REFERRAL_MANAGER:
@@ -18,6 +18,9 @@ export const CONTRACTS = {
   STABLECOIN:
     import.meta.env.VITE_STABLECOIN_ADDRESS ||
     "0x09fcF239CC371c23DB47b5762B5A1E0266e08207",
+  PANCAKE_ROUTER:
+    import.meta.env.VITE_PANCAKE_ROUTER_ADDRESS ||
+    "0x10ED43C718714eb63d5aA57B78B54704E256024E", // PancakeSwap V2 Router
 } as const;
 
 // LimitlessNFT ABI - Main entry point for NFT purchases (JSON format for wagmi v2)
@@ -25,9 +28,22 @@ export const LIMITLESS_NFT_ABI = [
   // Read functions
   {
     type: "function",
-    name: "NFT_PRICE",
+    name: "nftPrice",
     inputs: [],
     outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getPricing",
+    inputs: [],
+    outputs: [
+      { name: "_nftPrice", type: "uint256" },
+      { name: "_commissionAmount", type: "uint256" },
+      { name: "_buybackAmount", type: "uint256" },
+      { name: "_rndAmount", type: "uint256" },
+      { name: "_ceoAmount", type: "uint256" },
+    ],
     stateMutability: "view",
   },
   {
@@ -207,19 +223,33 @@ export const LIMITLESS_TOKEN_ABI = [
   },
 ] as const;
 
-// LiquidityPool ABI (JSON format for wagmi v2)
-export const LIQUIDITY_POOL_ABI = [
+// BuybackPool ABI (JSON format for wagmi v2)
+export const BUYBACK_POOL_ABI = [
   // Read functions
   {
     type: "function",
-    name: "totalValueLocked",
+    name: "totalUsdtSpentOnBuyback",
     inputs: [],
     outputs: [{ type: "uint256" }],
     stateMutability: "view",
   },
   {
     type: "function",
-    name: "totalRedeemed",
+    name: "totalTokensBought",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalTokensRedeemed",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalUsdtReturned",
     inputs: [],
     outputs: [{ type: "uint256" }],
     stateMutability: "view",
@@ -247,14 +277,22 @@ export const LIQUIDITY_POOL_ABI = [
   },
   {
     type: "function",
+    name: "maxSlippageBps",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "getPoolStats",
     inputs: [],
     outputs: [
-      { name: "tvl", type: "uint256" },
-      { name: "redeemed", type: "uint256" },
-      { name: "circulatingSupply", type: "uint256" },
-      { name: "tokenPrice", type: "uint256" },
+      { name: "usdtSpent", type: "uint256" },
+      { name: "tokensBought", type: "uint256" },
+      { name: "tokensRedeemed", type: "uint256" },
+      { name: "usdtReturned", type: "uint256" },
       { name: "poolBalance", type: "uint256" },
+      { name: "tokenPrice", type: "uint256" },
     ],
     stateMutability: "view",
   },
@@ -274,8 +312,9 @@ export const LIQUIDITY_POOL_ABI = [
         type: "tuple[]",
         components: [
           { name: "timestamp", type: "uint256" },
-          { name: "tvl", type: "uint256" },
-          { name: "circulatingSupply", type: "uint256" },
+          { name: "totalBought", type: "uint256" },
+          { name: "totalRedeemed", type: "uint256" },
+          { name: "poolBalance", type: "uint256" },
           { name: "tokenPrice", type: "uint256" },
         ],
       },
@@ -300,11 +339,20 @@ export const LIQUIDITY_POOL_ABI = [
   // Events
   {
     type: "event",
+    name: "BuybackExecuted",
+    inputs: [
+      { name: "usdtAmount", type: "uint256", indexed: false },
+      { name: "tokensReceived", type: "uint256", indexed: false },
+      { name: "tokenPrice", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
     name: "TokensRedeemed",
     inputs: [
       { name: "user", type: "address", indexed: true },
       { name: "tokensBurned", type: "uint256", indexed: false },
-      { name: "usdReceived", type: "uint256", indexed: false },
+      { name: "usdtReceived", type: "uint256", indexed: false },
       { name: "tokenPrice", type: "uint256", indexed: false },
     ],
   },

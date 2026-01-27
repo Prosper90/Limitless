@@ -10,7 +10,7 @@ import {
   CONTRACTS,
   LIMITLESS_NFT_ABI,
   LIMITLESS_TOKEN_ABI,
-  LIQUIDITY_POOL_ABI,
+  BUYBACK_POOL_ABI,
   REFERRAL_MANAGER_ABI,
   LIMITLESS_REWARDS_ABI,
   ERC20_ABI,
@@ -34,7 +34,7 @@ export function useLimitlessNFT() {
   const { data: nftPrice } = useReadContract({
     address: CONTRACTS.LIMITLESS_NFT as `0x${string}`,
     abi: LIMITLESS_NFT_ABI,
-    functionName: "NFT_PRICE",
+    functionName: "nftPrice",
   });
 
   const { data: totalMinted } = useReadContract({
@@ -123,58 +123,59 @@ export function useLimitlessToken() {
   };
 }
 
-// Hook for Liquidity Pool operations
-export function useLiquidityPool() {
-  // const { address } = useAccount();
+// Hook for Buyback Pool operations
+export function useBuybackPool() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
   const { data: poolStats, refetch: refetchStats } = useReadContract({
-    address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-    abi: LIQUIDITY_POOL_ABI,
+    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+    abi: BUYBACK_POOL_ABI,
     functionName: "getPoolStats",
   });
 
   const { data: tokenPrice } = useReadContract({
-    address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-    abi: LIQUIDITY_POOL_ABI,
+    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+    abi: BUYBACK_POOL_ABI,
     functionName: "getCurrentTokenPrice",
   });
 
   const { data: minRedemption } = useReadContract({
-    address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-    abi: LIQUIDITY_POOL_ABI,
+    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+    abi: BUYBACK_POOL_ABI,
     functionName: "minRedemptionAmount",
   });
-
-  // const calculateRedemption = async (amount: string) => {
-  //   const amountWei = parseEther(amount);
-  //   // This is a view function, would need to be called separately
-  //   return "0";
-  // };
 
   const redeemTokens = async (amount: string) => {
     const amountWei = parseEther(amount);
     writeContract({
-      address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-      abi: LIQUIDITY_POOL_ABI,
+      address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+      abi: BUYBACK_POOL_ABI,
       functionName: "redeemTokens",
       args: [amountWei],
     });
   };
 
+  // Stats: [usdtSpent, tokensBought, tokensRedeemed, usdtReturned, poolBalance, tokenPrice]
   const stats = poolStats as
-    | [bigint, bigint, bigint, bigint, bigint]
+    | [bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
 
   return {
-    tvl: stats ? formatEther(stats[0]) : "0",
-    totalRedeemed: stats ? formatEther(stats[1]) : "0",
-    circulatingSupply: stats ? formatEther(stats[2]) : "0",
-    tokenPrice: tokenPrice ? formatEther(tokenPrice as bigint) : "0",
+    // Total USDT spent on buybacks (replaces TVL concept)
+    totalUsdtSpent: stats ? formatEther(stats[0]) : "0",
+    // Total tokens bought from DEX
+    totalTokensBought: stats ? formatEther(stats[1]) : "0",
+    // Total tokens redeemed by users
+    totalTokensRedeemed: stats ? formatEther(stats[2]) : "0",
+    // Total USDT returned to users
+    totalUsdtReturned: stats ? formatEther(stats[3]) : "0",
+    // Current pool balance (LIMITLESS tokens held)
     poolBalance: stats ? formatEther(stats[4]) : "0",
+    // Current token price from DEX
+    tokenPrice: tokenPrice ? formatEther(tokenPrice as bigint) : "0",
     minRedemption: minRedemption ? formatEther(minRedemption as bigint) : "1",
     redeemTokens,
     isPending,
@@ -185,17 +186,17 @@ export function useLiquidityPool() {
   };
 }
 
-// Hook for Liquidity Pool historical data (for charts)
-export function useLiquidityPoolHistory(snapshotCount: number = 30) {
+// Hook for Buyback Pool historical data (for charts)
+export function useBuybackPoolHistory(snapshotCount: number = 30) {
   const { data: historyLength } = useReadContract({
-    address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-    abi: LIQUIDITY_POOL_ABI,
+    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+    abi: BUYBACK_POOL_ABI,
     functionName: "getHistoryLength",
   });
 
   const { data: snapshots, isLoading, refetch } = useReadContract({
-    address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-    abi: LIQUIDITY_POOL_ABI,
+    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+    abi: BUYBACK_POOL_ABI,
     functionName: "getRecentSnapshots",
     args: [BigInt(snapshotCount)],
   });
@@ -204,14 +205,16 @@ export function useLiquidityPoolHistory(snapshotCount: number = 30) {
   const chartData = snapshots
     ? (snapshots as Array<{
         timestamp: bigint;
-        tvl: bigint;
-        circulatingSupply: bigint;
+        totalBought: bigint;
+        totalRedeemed: bigint;
+        poolBalance: bigint;
         tokenPrice: bigint;
       }>).map((snapshot) => ({
         timestamp: Number(snapshot.timestamp) * 1000, // Convert to milliseconds
         date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
-        tvl: parseFloat(formatEther(snapshot.tvl)),
-        circulatingSupply: parseFloat(formatEther(snapshot.circulatingSupply)),
+        totalBought: parseFloat(formatEther(snapshot.totalBought)),
+        totalRedeemed: parseFloat(formatEther(snapshot.totalRedeemed)),
+        poolBalance: parseFloat(formatEther(snapshot.poolBalance)),
         tokenPrice: parseFloat(formatEther(snapshot.tokenPrice)),
       }))
     : [];
@@ -418,8 +421,8 @@ export function useReferralManager() {
   };
 }
 
-// Hook for combined claim and burn operations
-export function useClaimAndBurn() {
+// Hook for combined claim and redeem operations
+export function useClaimAndRedeem() {
   const { address } = useAccount();
   const {
     writeContract: writeClaimContract,
@@ -427,10 +430,10 @@ export function useClaimAndBurn() {
     isPending: isClaimPending,
   } = useWriteContract();
   const {
-    writeContract: writeBurnContract,
-    data: burnHash,
-    isPending: isBurnPending,
-    error: burnError,
+    writeContract: writeRedeemContract,
+    data: redeemHash,
+    isPending: isRedeemPending,
+    error: redeemError,
   } = useWriteContract();
 
   const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } =
@@ -438,9 +441,9 @@ export function useClaimAndBurn() {
       hash: claimHash,
     });
 
-  const { isLoading: isBurnConfirming, isSuccess: isBurnSuccess } =
+  const { isLoading: isRedeemConfirming, isSuccess: isRedeemSuccess } =
     useWaitForTransactionReceipt({
-      hash: burnHash,
+      hash: redeemHash,
     });
 
   const { data: rewardInfo } = useReadContract({
@@ -456,11 +459,11 @@ export function useClaimAndBurn() {
   const pendingRewardsRaw = info ? info[3] : BigInt(0);
   const hasPendingRewards = pendingRewardsRaw > BigInt(0);
 
-  const claimAndBurn = async (
-    burnAmount: string,
+  const claimAndRedeem = async (
+    redeemAmount: string,
     onClaimComplete?: () => void,
   ) => {
-    const amountWei = parseEther(burnAmount);
+    const amountWei = parseEther(redeemAmount);
 
     // If there are pending rewards, claim first
     if (hasPendingRewards) {
@@ -473,10 +476,10 @@ export function useClaimAndBurn() {
         {
           onSuccess: () => {
             onClaimComplete?.();
-            // After claim succeeds, proceed with burn
-            writeBurnContract({
-              address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-              abi: LIQUIDITY_POOL_ABI,
+            // After claim succeeds, proceed with redeem
+            writeRedeemContract({
+              address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+              abi: BUYBACK_POOL_ABI,
               functionName: "redeemTokens",
               args: [amountWei],
             });
@@ -484,10 +487,10 @@ export function useClaimAndBurn() {
         },
       );
     } else {
-      // No pending rewards, just burn directly
-      writeBurnContract({
-        address: CONTRACTS.LIQUIDITY_POOL as `0x${string}`,
-        abi: LIQUIDITY_POOL_ABI,
+      // No pending rewards, just redeem directly
+      writeRedeemContract({
+        address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
+        abi: BUYBACK_POOL_ABI,
         functionName: "redeemTokens",
         args: [amountWei],
       });
@@ -495,19 +498,19 @@ export function useClaimAndBurn() {
   };
 
   return {
-    claimAndBurn,
+    claimAndRedeem,
     hasPendingRewards,
     pendingRewards: formatEther(pendingRewardsRaw),
     isClaimPending,
     isClaimConfirming,
     isClaimSuccess,
-    isBurnPending,
-    isBurnConfirming,
-    isBurnSuccess,
-    isPending: isClaimPending || isBurnPending,
-    isConfirming: isClaimConfirming || isBurnConfirming,
-    isSuccess: isBurnSuccess,
-    error: burnError,
+    isRedeemPending,
+    isRedeemConfirming,
+    isRedeemSuccess,
+    isPending: isClaimPending || isRedeemPending,
+    isConfirming: isClaimConfirming || isRedeemConfirming,
+    isSuccess: isRedeemSuccess,
+    error: redeemError,
   };
 }
 

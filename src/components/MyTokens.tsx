@@ -2,44 +2,44 @@ import React, { useState } from "react";
 import {
   useLimitlessToken,
   useLimitlessRewards,
-  useLiquidityPool,
-  useClaimAndBurn,
+  useBuybackPool,
+  useClaimAndRedeem,
 } from "../hooks/useLimitless";
 
 export const MyTokens: React.FC = () => {
-  const [burnAmount, setBurnAmount] = useState("");
+  const [redeemAmount, setRedeemAmount] = useState("");
 
   const { tokenBalance, refetchBalance } = useLimitlessToken();
   const { pendingRewards, nftCount, totalClaimed, lastClaimTime } =
     useLimitlessRewards();
-  const { tvl, tokenPrice, minRedemption } = useLiquidityPool();
+  const { tokenPrice, minRedemption, totalUsdtSpent } = useBuybackPool();
   const {
-    claimAndBurn,
+    claimAndRedeem,
     hasPendingRewards,
-    isPending: isBurnPending,
-    isConfirming: isBurnConfirming,
-    isSuccess: burnSuccess,
-    error: burnError,
-  } = useClaimAndBurn();
+    isPending: isRedeemPending,
+    isConfirming: isRedeemConfirming,
+    isSuccess: redeemSuccess,
+    error: redeemError,
+  } = useClaimAndRedeem();
 
-  const handleBurn = async () => {
-    if (!burnAmount || parseFloat(burnAmount) <= 0) return;
-    await claimAndBurn(burnAmount, () => {
+  const handleRedeem = async () => {
+    if (!redeemAmount || parseFloat(redeemAmount) <= 0) return;
+    await claimAndRedeem(redeemAmount, () => {
       // Refetch balance after claim completes
       refetchBalance();
     });
     refetchBalance();
-    setBurnAmount("");
+    setRedeemAmount("");
   };
 
-  const handleMaxBurn = () => {
-    setBurnAmount(totalAvailable.toString());
+  const handleMaxRedeem = () => {
+    setRedeemAmount(totalAvailable.toString());
   };
 
-  // Calculate estimated redemption
+  // Calculate estimated redemption value
   const estimatedRedemption = () => {
-    if (!burnAmount || parseFloat(burnAmount) <= 0) return "0";
-    const amount = parseFloat(burnAmount);
+    if (!redeemAmount || parseFloat(redeemAmount) <= 0) return "0";
+    const amount = parseFloat(redeemAmount);
     const price = parseFloat(tokenPrice);
     return (amount * price).toFixed(6);
   };
@@ -49,12 +49,12 @@ export const MyTokens: React.FC = () => {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
-  const isBurnLoading = isBurnPending || isBurnConfirming;
+  const isRedeemLoading = isRedeemPending || isRedeemConfirming;
   // Calculate total available (balance + pending rewards)
   const totalAvailable = parseFloat(tokenBalance) + parseFloat(pendingRewards);
-  const canBurn =
-    parseFloat(burnAmount) >= parseFloat(minRedemption) &&
-    parseFloat(burnAmount) <= totalAvailable;
+  const canRedeem =
+    parseFloat(redeemAmount) >= parseFloat(minRedemption) &&
+    parseFloat(redeemAmount) <= totalAvailable;
 
   return (
     <div className="container py-8">
@@ -165,18 +165,18 @@ export const MyTokens: React.FC = () => {
           </div>
         </div>
 
-        {/* Burn Tokens Section */}
+        {/* Redeem Tokens Section */}
         <div className="nerko-card mb-8">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="font-bold text-xl mb-1">Burn Tokens for USDT</h2>
+              <h2 className="font-bold text-xl mb-1">Redeem Tokens for USDT</h2>
               <p className="text-gray-400 text-sm">
-                Redeem USDT from the liquidity pool at current token price
+                Sell tokens on PancakeSwap at current market price
               </p>
             </div>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-red-600/20 to-orange-600/20 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-green-600/20 to-teal-600/20 flex items-center justify-center">
               <svg
-                className="w-7 h-7 text-red-400"
+                className="w-7 h-7 text-green-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -185,7 +185,7 @@ export const MyTokens: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
             </div>
@@ -195,18 +195,18 @@ export const MyTokens: React.FC = () => {
             {/* Amount Input */}
             <div>
               <label className="text-sm text-gray-400 mb-2 block">
-                Amount to Burn
+                Amount to Redeem
               </label>
               <div className="flex gap-3">
                 <input
                   type="number"
                   placeholder="0.0"
-                  value={burnAmount}
-                  onChange={(e) => setBurnAmount(e.target.value)}
+                  value={redeemAmount}
+                  onChange={(e) => setRedeemAmount(e.target.value)}
                   className="nerko-input flex-1"
                 />
                 <button
-                  onClick={handleMaxBurn}
+                  onClick={handleMaxRedeem}
                   className="btn btn-outline shrink-0"
                 >
                   MAX
@@ -219,39 +219,42 @@ export const MyTokens: React.FC = () => {
             </div>
 
             {/* Redemption Preview */}
-            {parseFloat(burnAmount) > 0 && (
+            {parseFloat(redeemAmount) > 0 && (
               <div className="p-6 bg-white/5 rounded-2xl space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400">You Burn</span>
+                  <span className="text-gray-400">You Redeem</span>
                   <span className="font-bold text-xl">
-                    {burnAmount}{" "}
+                    {redeemAmount}{" "}
                     <span className="text-purple-400">LIMITLESS</span>
                   </span>
                 </div>
                 <div className="border-t border-white/10 pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">You Receive</span>
+                    <span className="text-gray-400">Estimated USDT</span>
                     <span className="font-bold text-2xl text-green-400">
-                      ${estimatedRedemption()} USDT
+                      ~${estimatedRedemption()} USDT
                     </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Exchange Rate</span>
+                  <span className="text-gray-500">Current DEX Price</span>
                   <span className="text-gray-400">
                     1 LIMITLESS = ${parseFloat(tokenPrice).toFixed(6)} USDT
                   </span>
                 </div>
+                <p className="text-gray-500 text-xs">
+                  Final amount may vary due to DEX slippage (max 5%)
+                </p>
               </div>
             )}
 
-            {/* Burn Button */}
+            {/* Redeem Button */}
             <button
-              onClick={handleBurn}
-              disabled={!canBurn || isBurnLoading}
-              className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-red-600 to-orange-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              onClick={handleRedeem}
+              disabled={!canRedeem || isRedeemLoading}
+              className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-green-600 to-teal-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {isBurnLoading ? (
+              {isRedeemLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg
                     className="animate-spin w-5 h-5"
@@ -286,41 +289,41 @@ export const MyTokens: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  Burn & Redeem
+                  Redeem for USDT
                 </span>
               )}
             </button>
 
-            {hasPendingRewards && parseFloat(burnAmount) > 0 && (
+            {hasPendingRewards && parseFloat(redeemAmount) > 0 && (
               <p className="text-gray-500 text-xs text-center">
                 Your pending rewards will be automatically claimed before
-                burning.
+                redeeming.
               </p>
             )}
 
-            {burnSuccess && (
+            {redeemSuccess && (
               <div className="p-4 bg-green-600/20 border border-green-600/30 rounded-xl text-center">
                 <p className="text-green-400 font-semibold">
-                  Tokens burned and USDT redeemed successfully!
+                  Tokens redeemed successfully! USDT sent to your wallet.
                 </p>
               </div>
             )}
 
-            {burnError && (
+            {redeemError && (
               <div className="p-4 bg-red-600/20 border border-red-600/30 rounded-xl text-center">
                 <p className="text-red-400 font-semibold">Transaction failed</p>
                 <p className="text-gray-400 text-sm mt-1">
-                  {burnError.message}
+                  {redeemError.message}
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Pool Info */}
+        {/* Market Info */}
         <div className="nerko-card">
           <h2 className="font-bold text-lg mb-6 flex items-center gap-2">
             <svg
@@ -333,27 +336,27 @@ export const MyTokens: React.FC = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
               />
             </svg>
-            Liquidity Pool Info
+            Market Info
           </h2>
           <div className="grid grid-cols-2 gap-6">
             <div className="p-4 bg-white/5 rounded-xl">
-              <p className="text-gray-400 text-sm mb-1">Total Value Locked</p>
+              <p className="text-gray-400 text-sm mb-1">Total Buyback Volume</p>
               <p className="text-2xl font-bold gradient-text">
-                ${parseFloat(tvl).toFixed(2)}
+                ${parseFloat(totalUsdtSpent).toFixed(2)}
               </p>
             </div>
             <div className="p-4 bg-white/5 rounded-xl">
-              <p className="text-gray-400 text-sm mb-1">Token Price</p>
+              <p className="text-gray-400 text-sm mb-1">DEX Token Price</p>
               <p className="text-2xl font-bold">
                 ${parseFloat(tokenPrice).toFixed(6)}
               </p>
             </div>
           </div>
           <p className="text-gray-500 text-xs mt-4 text-center">
-            Token price = Total Value Locked / Circulating Supply
+            Price determined by PancakeSwap DEX liquidity pool
           </p>
         </div>
       </div>
