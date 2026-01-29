@@ -192,7 +192,7 @@ export const BuyNFT: React.FC = () => {
                       />
                     </svg>
                   </div>
-                  <p className="text-gray-400 text-sm">Liquidity Pool</p>
+                  <p className="text-gray-400 text-sm">Genesis Vault</p>
                   <p className="text-xl font-bold">$25</p>
                 </div>
                 <div className="p-4 bg-white/5 rounded-xl">

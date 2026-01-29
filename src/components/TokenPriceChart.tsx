@@ -8,9 +8,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useBuybackPoolHistory } from "../hooks/useLimitless";
+import { useVaultHistory } from "../hooks/useLimitless";
 
-type ChartMetric = "tokenPrice" | "totalBought" | "poolBalance";
+type ChartMetric = "floorPrice" | "totalDistributed" | "totalBacking";
 
 interface MetricConfig {
   key: ChartMetric;
@@ -22,25 +22,25 @@ interface MetricConfig {
 
 const metrics: MetricConfig[] = [
   {
-    key: "tokenPrice",
-    label: "Token Price",
+    key: "floorPrice",
+    label: "Floor Price",
     color: "#a855f7",
     gradientId: "colorPrice",
     format: (v) => `$${v.toFixed(4)}`,
   },
   {
-    key: "totalBought",
-    label: "Tokens Bought",
+    key: "totalDistributed",
+    label: "Total Distributed",
     color: "#22c55e",
-    gradientId: "colorBought",
+    gradientId: "colorDistributed",
     format: (v) => (v >= 1000 ? (v / 1000).toFixed(1) + "K" : v.toFixed(2)),
   },
   {
-    key: "poolBalance",
-    label: "Pool Balance",
+    key: "totalBacking",
+    label: "Total Backing",
     color: "#3b82f6",
-    gradientId: "colorBalance",
-    format: (v) => (v >= 1000 ? (v / 1000).toFixed(1) + "K" : v.toFixed(0)),
+    gradientId: "colorBacking",
+    format: (v) => `$${v >= 1000 ? (v / 1000).toFixed(1) + "K" : v.toFixed(2)}`,
   },
 ];
 
@@ -69,8 +69,8 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
 };
 
 export const TokenPriceChart: React.FC = () => {
-  const [selectedMetric, setSelectedMetric] = useState<ChartMetric>("tokenPrice");
-  const { chartData, isLoading, historyLength } = useBuybackPoolHistory(30);
+  const [selectedMetric, setSelectedMetric] = useState<ChartMetric>("floorPrice");
+  const { chartData, isLoading, historyLength } = useVaultHistory(30);
 
   const currentMetric = metrics.find((m) => m.key === selectedMetric)!;
 
@@ -120,7 +120,7 @@ export const TokenPriceChart: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-bold text-lg">Price Chart</h3>
-            <p className="text-gray-400 text-sm">Historical token price data</p>
+            <p className="text-gray-400 text-sm">Historical floor price data</p>
           </div>
         </div>
         <div className="h-64 flex items-center justify-center">

@@ -2,9 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   useLimitlessNFT,
-  useBuybackPool,
-  useLimitlessRewards,
+  useGenesisVault,
+  useNFTRewards,
   useReferralManager,
+  useLimitlessToken,
 } from "../hooks/useLimitless";
 import { TokenPriceChart } from "./TokenPriceChart";
 
@@ -45,10 +46,15 @@ const StatCard: React.FC<StatCardProps> = ({
 );
 
 export const Dashboard: React.FC = () => {
-  const { totalMinted, userNFTBalance } = useLimitlessNFT();
-  const { totalUsdtSpent, tokenPrice } = useBuybackPool();
-  const { pendingRewards } = useLimitlessRewards();
+  const { totalMinted, userNFTBalance, userTokens } = useLimitlessNFT();
+  const { totalBacking, totalDistributed, floorPrice } = useGenesisVault();
+  const { tokenBalance } = useLimitlessToken();
+  const nftRewards = useNFTRewards(userTokens);
   const { totalTeamSize, totalEarned } = useReferralManager();
+
+  // Aggregate token balance: wallet + NFT balances
+  const totalTokenBalance =
+    parseFloat(tokenBalance) + parseFloat(nftRewards.totalTokenBalance);
 
   // Format large numbers
   const formatNumber = (num: string) => {
@@ -143,7 +149,7 @@ export const Dashboard: React.FC = () => {
                 My Rewards
               </h3>
               <p className="text-gray-400 text-sm">
-                +{formatNumber(pendingRewards)} accruing
+                +{formatNumber(nftRewards.realtimePending)} accruing
               </p>
             </div>
             <svg
@@ -232,9 +238,9 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Token Balance"
-            value={formatNumber(pendingRewards)}
-            subtitle="Accrued LIMITLESS tokens"
-            gradient={parseFloat(pendingRewards) > 0}
+            value={formatNumber(totalTokenBalance.toString())}
+            subtitle="Wallet + NFT balances"
+            gradient={totalTokenBalance > 0}
             icon={
               <svg
                 className="w-6 h-6"
@@ -308,20 +314,20 @@ export const Dashboard: React.FC = () => {
             subtitle="LIMITLESS NFTs minted"
           />
           <StatCard
-            title="Total Accrued"
-            value={formatNumber(pendingRewards)}
-            subtitle="Tokens accrued ecosystem-wide"
+            title="Total Distributed"
+            value={formatNumber(totalDistributed)}
+            subtitle="Tokens distributed to NFTs"
           />
           <StatCard
-            title="Total Buyback Volume"
-            value={formatUSD(totalUsdtSpent)}
-            subtitle="USDT spent on buybacks"
+            title="Total Vault Backing"
+            value={formatUSD(totalBacking)}
+            subtitle="USDT backing the vault"
             gradient
           />
           <StatCard
-            title="Token Price"
-            value={formatUSD(tokenPrice)}
-            subtitle="Current DEX price"
+            title="Floor Price"
+            value={formatUSD(floorPrice)}
+            subtitle="Guaranteed floor price"
           />
         </div>
       </section>
@@ -346,7 +352,8 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="font-bold mb-2">Purchase NFT</h3>
               <p className="text-gray-400 text-sm">
-                Buy a LIMITLESS NFT for $100 USDT. $25 goes to buyback, increasing token price.
+                Buy a LIMITLESS NFT for $100 USDT. $25 backs the Genesis Vault,
+                establishing a guaranteed floor price.
               </p>
             </div>
           </div>
@@ -369,7 +376,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="font-bold mb-2">Redeem Anytime</h3>
               <p className="text-gray-400 text-sm">
-                Sell your tokens on PancakeSwap at market price to get USDT.
+                Redeem tokens at the guaranteed floor price for USDT.
               </p>
             </div>
           </div>

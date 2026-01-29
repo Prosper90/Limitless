@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { useBuybackPool, useLimitlessNFT } from "../hooks/useLimitless";
+import { useGenesisVault, useLimitlessNFT } from "../hooks/useLimitless";
 
 // Hero Section
 const HeroSection: React.FC = () => {
@@ -79,26 +79,24 @@ const HeroSection: React.FC = () => {
 
 // Stats Section
 const StatsSection: React.FC = () => {
-  const { totalUsdtSpent, tokenPrice } = useBuybackPool();
+  const { totalBacking, floorPrice } = useGenesisVault();
   const { totalMinted } = useLimitlessNFT();
 
   const stats = [
     {
-      value: `$${parseFloat(totalUsdtSpent || "0").toLocaleString()}`,
-      label: "Total Buyback Volume",
+      value: `$${parseFloat(totalBacking || "0").toLocaleString()}`,
+      label: "Total Vault Backing",
     },
     { value: totalMinted || "0", label: "NFTs Minted" },
     {
-      value: `$${parseFloat(tokenPrice || "0").toFixed(4)}`,
-      label: "Token Price",
+      value: `$${parseFloat(floorPrice || "0").toFixed(4)}`,
+      label: "Floor Price",
     },
     {
       value: "1 Quadrillion Tokens",
       label: "Total Token Supply",
     },
   ];
-
-  //parseFloat(circulatingSupply || "0").toLocaleString()
 
   return (
     <section className="py-16 border-y border-white/5">
@@ -268,7 +266,7 @@ const FeaturesSection: React.FC = () => {
       ),
       title: "Trade & Redeem",
       description:
-        "Sell your tokens anytime on PancakeSwap at the current market price to get USDT.",
+        "Redeem your tokens anytime at the guaranteed floor price to get USDT.",
     },
     {
       icon: (

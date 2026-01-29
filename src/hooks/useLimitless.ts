@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   useReadContract,
+  useReadContracts,
   useWriteContract,
   useWaitForTransactionReceipt,
   useAccount,
@@ -10,20 +11,12 @@ import {
   CONTRACTS,
   LIMITLESS_NFT_ABI,
   LIMITLESS_TOKEN_ABI,
-  BUYBACK_POOL_ABI,
+  GENESIS_VAULT_ABI,
   REFERRAL_MANAGER_ABI,
-  LIMITLESS_REWARDS_ABI,
   ERC20_ABI,
 } from "../utils/contracts";
 
-// Constants for reward calculation
-const DAILY_REWARD_PER_NFT = 1; // 1 token per NFT per day
-const SECONDS_PER_DAY = 86400;
-
-// Contract deployment date (2025-01-19) - used for global circulation calculation
-const CONTRACT_DEPLOYMENT_TIMESTAMP = new Date("2025-01-19T00:00:00Z").getTime() / 1000;
-
-// Hook for NFT operations
+// Hook for NFT operations — unchanged API
 export function useLimitlessNFT() {
   const { address } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
@@ -83,7 +76,7 @@ export function useLimitlessNFT() {
   };
 }
 
-// Hook for Token operations
+// Hook for Token operations — simplified (no circulatingSupply/lockedSupply)
 export function useLimitlessToken() {
   const { address } = useAccount();
 
@@ -94,18 +87,6 @@ export function useLimitlessToken() {
     args: address ? [address] : undefined,
   });
 
-  const { data: circulatingSupply } = useReadContract({
-    address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
-    abi: LIMITLESS_TOKEN_ABI,
-    functionName: "circulatingSupply",
-  });
-
-  const { data: lockedSupply } = useReadContract({
-    address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
-    abi: LIMITLESS_TOKEN_ABI,
-    functionName: "getLockedSupply",
-  });
-
   const { data: totalSupply } = useReadContract({
     address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
     abi: LIMITLESS_TOKEN_ABI,
@@ -114,108 +95,86 @@ export function useLimitlessToken() {
 
   return {
     tokenBalance: tokenBalance ? formatEther(tokenBalance as bigint) : "0",
-    circulatingSupply: circulatingSupply
-      ? formatEther(circulatingSupply as bigint)
-      : "0",
-    lockedSupply: lockedSupply ? formatEther(lockedSupply as bigint) : "0",
     totalSupply: totalSupply ? formatEther(totalSupply as bigint) : "0",
     refetchBalance,
   };
 }
 
-// Hook for Buyback Pool operations
-export function useBuybackPool() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
+// Hook for Genesis Vault stats (replaces useBuybackPool)
+export function useGenesisVault() {
+  const { data: vaultStats, refetch: refetchStats } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "getVaultStats",
   });
 
-  const { data: poolStats, refetch: refetchStats } = useReadContract({
-    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-    abi: BUYBACK_POOL_ABI,
-    functionName: "getPoolStats",
+  const { data: floorPriceRaw } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "getFloorPrice",
   });
 
-  const { data: tokenPrice } = useReadContract({
-    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-    abi: BUYBACK_POOL_ABI,
-    functionName: "getCurrentTokenPrice",
-  });
-
-  const { data: minRedemption } = useReadContract({
-    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-    abi: BUYBACK_POOL_ABI,
+  const { data: minRedemptionRaw } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
     functionName: "minRedemptionAmount",
   });
 
-  const redeemTokens = async (amount: string) => {
-    const amountWei = parseEther(amount);
-    writeContract({
-      address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-      abi: BUYBACK_POOL_ABI,
-      functionName: "redeemTokens",
-      args: [amountWei],
-    });
-  };
-
-  // Stats: [usdtSpent, tokensBought, tokensRedeemed, usdtReturned, poolBalance, tokenPrice]
-  const stats = poolStats as
-    | [bigint, bigint, bigint, bigint, bigint, bigint]
+  // Stats: [backing, distributed, claimed, redeemed, redeemedUSDT, floorPrice, activeNFTs, vaultTokenBalance, dailyReward]
+  const stats = vaultStats as
+    | [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
 
   return {
-    // Total USDT spent on buybacks (replaces TVL concept)
-    totalUsdtSpent: stats ? formatEther(stats[0]) : "0",
-    // Total tokens bought from DEX
-    totalTokensBought: stats ? formatEther(stats[1]) : "0",
-    // Total tokens redeemed by users
-    totalTokensRedeemed: stats ? formatEther(stats[2]) : "0",
-    // Total USDT returned to users
-    totalUsdtReturned: stats ? formatEther(stats[3]) : "0",
-    // Current pool balance (LIMITLESS tokens held)
-    poolBalance: stats ? formatEther(stats[4]) : "0",
-    // Current token price from DEX
-    tokenPrice: tokenPrice ? formatEther(tokenPrice as bigint) : "0",
-    minRedemption: minRedemption ? formatEther(minRedemption as bigint) : "1",
-    redeemTokens,
-    isPending,
-    isConfirming,
-    isSuccess,
-    error,
+    totalBacking: stats ? formatEther(stats[0]) : "0",
+    totalDistributed: stats ? formatEther(stats[1]) : "0",
+    totalClaimed: stats ? formatEther(stats[2]) : "0",
+    totalRedeemed: stats ? formatEther(stats[3]) : "0",
+    totalRedeemedUSDT: stats ? formatEther(stats[4]) : "0",
+    floorPrice: floorPriceRaw
+      ? formatEther(floorPriceRaw as bigint)
+      : stats
+        ? formatEther(stats[5])
+        : "0",
+    activeNFTs: stats ? Number(stats[6]).toString() : "0",
+    vaultTokenBalance: stats ? formatEther(stats[7]) : "0",
+    dailyReward: stats ? formatEther(stats[8]) : "0",
+    minRedemption: minRedemptionRaw
+      ? formatEther(minRedemptionRaw as bigint)
+      : "1",
     refetchStats,
   };
 }
 
-// Hook for Buyback Pool historical data (for charts)
-export function useBuybackPoolHistory(snapshotCount: number = 30) {
+// Hook for Vault historical data — replaces useBuybackPoolHistory
+export function useVaultHistory(snapshotCount: number = 30) {
   const { data: historyLength } = useReadContract({
-    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-    abi: BUYBACK_POOL_ABI,
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
     functionName: "getHistoryLength",
   });
 
   const { data: snapshots, isLoading, refetch } = useReadContract({
-    address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-    abi: BUYBACK_POOL_ABI,
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
     functionName: "getRecentSnapshots",
     args: [BigInt(snapshotCount)],
   });
 
-  // Transform snapshots into chart-friendly format
   const chartData = snapshots
     ? (snapshots as Array<{
         timestamp: bigint;
-        totalBought: bigint;
-        totalRedeemed: bigint;
-        poolBalance: bigint;
-        tokenPrice: bigint;
+        totalBacking: bigint;
+        totalDistributed: bigint;
+        floorPrice: bigint;
+        activeNFTs: bigint;
       }>).map((snapshot) => ({
-        timestamp: Number(snapshot.timestamp) * 1000, // Convert to milliseconds
+        timestamp: Number(snapshot.timestamp) * 1000,
         date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
-        totalBought: parseFloat(formatEther(snapshot.totalBought)),
-        totalRedeemed: parseFloat(formatEther(snapshot.totalRedeemed)),
-        poolBalance: parseFloat(formatEther(snapshot.poolBalance)),
-        tokenPrice: parseFloat(formatEther(snapshot.tokenPrice)),
+        totalBacking: parseFloat(formatEther(snapshot.totalBacking)),
+        totalDistributed: parseFloat(formatEther(snapshot.totalDistributed)),
+        floorPrice: parseFloat(formatEther(snapshot.floorPrice)),
+        activeNFTs: Number(snapshot.activeNFTs),
       }))
     : [];
 
@@ -227,149 +186,305 @@ export function useBuybackPoolHistory(snapshotCount: number = 30) {
   };
 }
 
-// Hook for Rewards operations with real-time calculation
-export function useLimitlessRewards() {
+// Per-NFT rewards hook (replaces useLimitlessRewards)
+export function useNFTRewards(tokenIds: bigint[] | undefined) {
   const { address } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
-  // State for real-time pending rewards
-  const [realtimePendingRewards, setRealtimePendingRewards] = useState("0");
-  const [realtimeGlobalPending, setRealtimeGlobalPending] = useState("0");
+  const [realtimePending, setRealtimePending] = useState("0");
 
-  const { data: rewardInfo, refetch: refetchRewards } = useReadContract({
-    address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
-    abi: LIMITLESS_REWARDS_ABI,
-    functionName: "getUserRewardInfo",
+  // Build multicall contract reads for getNFTInfo per tokenId
+  const nftInfoContracts = (tokenIds || []).map((tokenId) => ({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "getNFTInfo" as const,
+    args: [tokenId],
+  }));
+
+  // Build multicall contract reads for calculatePending per tokenId
+  const pendingContracts = (tokenIds || []).map((tokenId) => ({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "calculatePending" as const,
+    args: [tokenId],
+  }));
+
+  // Build multicall for liquidity values
+  const liquidityContracts = (tokenIds || []).map((tokenId) => ({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "getNFTLiquidityValue" as const,
+    args: [tokenId],
+  }));
+
+  const { data: nftInfoResults, refetch: refetchInfo } = useReadContracts({
+    contracts: nftInfoContracts,
+    query: { enabled: (tokenIds || []).length > 0 },
+  });
+
+  const { data: pendingResults, refetch: refetchPending } = useReadContracts({
+    contracts: pendingContracts,
+    query: { enabled: (tokenIds || []).length > 0 },
+  });
+
+  const { data: liquidityResults, refetch: refetchLiquidity } =
+    useReadContracts({
+      contracts: liquidityContracts,
+      query: { enabled: (tokenIds || []).length > 0 },
+    });
+
+  // Read wallet token balance
+  const { data: walletBalance } = useReadContract({
+    address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
+    abi: LIMITLESS_TOKEN_ABI,
+    functionName: "balanceOf",
     args: address ? [address] : undefined,
   });
 
-  const { data: hasClaimable, refetch: refetchHasClaimable } = useReadContract({
-    address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
-    abi: LIMITLESS_REWARDS_ABI,
-    functionName: "hasClaimableRewards",
-    args: address ? [address] : undefined,
+  // Build NFT data array
+  const nfts = (tokenIds || []).map((tokenId, i) => {
+    const infoResult = nftInfoResults?.[i];
+    const pendingResult = pendingResults?.[i];
+    const liquidityResult = liquidityResults?.[i];
+
+    const info =
+      infoResult?.status === "success"
+        ? (infoResult.result as [bigint, bigint, bigint, bigint, boolean])
+        : undefined;
+    const pending =
+      pendingResult?.status === "success"
+        ? (pendingResult.result as bigint)
+        : BigInt(0);
+    const liquidityValue =
+      liquidityResult?.status === "success"
+        ? (liquidityResult.result as bigint)
+        : BigInt(0);
+
+    return {
+      tokenId: Number(tokenId),
+      tokenBalance: info ? formatEther(info[0]) : "0",
+      tokenBalanceRaw: info ? info[0] : BigInt(0),
+      pending: formatEther(pending),
+      pendingRaw: pending,
+      totalEarned: info ? formatEther(info[1]) : "0",
+      totalClaimed: info ? formatEther(info[2]) : "0",
+      totalRedeemed: info ? formatEther(info[3]) : "0",
+      liquidityValue: formatEther(liquidityValue),
+      isActive: info ? info[4] : false,
+    };
   });
 
-  const { data: globalStats, refetch: refetchGlobalStats } = useReadContract({
-    address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
-    abi: LIMITLESS_REWARDS_ABI,
-    functionName: "getGlobalStats",
-  });
+  // Aggregate totals
+  const totalTokenBalance = nfts.reduce(
+    (sum, nft) => sum + parseFloat(nft.tokenBalance),
+    0,
+  );
+  const totalPending = nfts.reduce(
+    (sum, nft) => sum + parseFloat(nft.pending),
+    0,
+  );
+  const walletBal = walletBalance
+    ? parseFloat(formatEther(walletBalance as bigint))
+    : 0;
+  const totalAvailable = totalTokenBalance + totalPending + walletBal;
 
-  const info = rewardInfo as
-    | [bigint, bigint, bigint, bigint, bigint]
-    | undefined;
-  const global = globalStats as [bigint, bigint, bigint] | undefined;
-
-  // Extract values from contract data
-  const nftCount = info ? Number(info[0]) : 0;
-  const lastClaimTime = info ? Number(info[1]) : 0;
-  const totalNFTsMinted = global ? Number(global[0]) : 0;
-
-  // Calculate real-time pending rewards (updates every second)
-  const calculateRealtimeRewards = useCallback(() => {
-    if (nftCount === 0 || lastClaimTime === 0) {
-      setRealtimePendingRewards("0");
+  // Real-time pending ticker (increment based on NFT count)
+  const nftCount = nfts.filter((n) => n.isActive).length;
+  const calculateRealtime = useCallback(() => {
+    if (nftCount === 0) {
+      setRealtimePending("0");
       return;
     }
+    // Add a tiny increment per second for visual ticker effect
+    const perSecond = nftCount / 86400;
+    setRealtimePending((prev) => {
+      const current = parseFloat(prev) || totalPending;
+      return (current + perSecond).toFixed(6);
+    });
+  }, [nftCount, totalPending]);
 
-    const now = Math.floor(Date.now() / 1000);
-    const timeElapsed = now - lastClaimTime;
-
-    // Calculate rewards with decimal precision (not just full days)
-    const daysElapsed = timeElapsed / SECONDS_PER_DAY;
-    const pendingRewards = daysElapsed * nftCount * DAILY_REWARD_PER_NFT;
-
-    setRealtimePendingRewards(pendingRewards.toFixed(6));
-  }, [nftCount, lastClaimTime]);
-
-  // Calculate global circulation (total accrued by all NFT holders)
-  const calculateGlobalPending = useCallback(() => {
-    if (totalNFTsMinted === 0) {
-      setRealtimeGlobalPending("0");
-      return;
-    }
-
-    // Calculate days since contract deployment
-    const now = Math.floor(Date.now() / 1000);
-    const daysSinceDeployment = (now - CONTRACT_DEPLOYMENT_TIMESTAMP) / SECONDS_PER_DAY;
-
-    // Global circulation = totalNFTsMinted × daysSinceDeployment × dailyReward
-    // This represents the total tokens accrued by all NFT holders
-    const globalCirculation = totalNFTsMinted * daysSinceDeployment * DAILY_REWARD_PER_NFT;
-
-    setRealtimeGlobalPending(globalCirculation.toFixed(6));
-  }, [totalNFTsMinted]);
-
-  // Real-time update interval (every second for smooth animation)
   useEffect(() => {
-    calculateRealtimeRewards();
-    calculateGlobalPending();
+    setRealtimePending(totalPending.toFixed(6));
+  }, [totalPending]);
 
-    const interval = setInterval(() => {
-      calculateRealtimeRewards();
-      calculateGlobalPending(); // Also update global circulation in real-time
-    }, 1000); // Update every second
-
+  useEffect(() => {
+    const interval = setInterval(calculateRealtime, 1000);
     return () => clearInterval(interval);
-  }, [calculateRealtimeRewards, calculateGlobalPending]);
+  }, [calculateRealtime]);
 
   // Auto-refresh contract data every 30 seconds
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      refetchRewards();
-      refetchHasClaimable();
-      refetchGlobalStats();
+    const interval = setInterval(() => {
+      refetchInfo();
+      refetchPending();
+      refetchLiquidity();
     }, 30000);
+    return () => clearInterval(interval);
+  }, [refetchInfo, refetchPending, refetchLiquidity]);
 
-    return () => clearInterval(refreshInterval);
-  }, [refetchRewards, refetchHasClaimable, refetchGlobalStats]);
-
-  const claimRewards = async () => {
+  const distribute = async (tokenId: bigint) => {
     writeContract({
-      address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
-      abi: LIMITLESS_REWARDS_ABI,
-      functionName: "claimRewards",
+      address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+      abi: GENESIS_VAULT_ABI,
+      functionName: "distributeToNFT",
+      args: [tokenId],
     });
   };
 
-  // Refetch all data
-  const refetchAll = useCallback(async () => {
-    await Promise.all([
-      refetchRewards(),
-      refetchHasClaimable(),
-      refetchGlobalStats(),
-    ]);
-  }, [refetchRewards, refetchHasClaimable, refetchGlobalStats]);
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchInfo(), refetchPending(), refetchLiquidity()]);
+  }, [refetchInfo, refetchPending, refetchLiquidity]);
 
   return {
-    nftCount: nftCount.toString(),
-    lastClaimTime: lastClaimTime ? new Date(lastClaimTime * 1000) : null,
-    totalClaimed: info ? formatEther(info[2]) : "0",
-    // Use real-time calculated pending rewards instead of contract value
-    pendingRewards: realtimePendingRewards,
-    // Also keep the contract value available if needed
-    contractPendingRewards: info ? formatEther(info[3]) : "0",
-    nextClaimTime: info ? new Date(Number(info[4]) * 1000) : null,
-    hasClaimableRewards: parseFloat(realtimePendingRewards) > 0 || (hasClaimable as boolean) || false,
-    totalNFTsMinted: totalNFTsMinted.toString(),
-    totalRewardsDistributed: global ? formatEther(global[1]) : "0",
-    dailyEmissionRate: global ? formatEther(global[2]) : "0",
-    // Global pending estimate for circulation display
-    globalPendingEstimate: realtimeGlobalPending,
-    claimRewards,
+    nfts,
+    totalTokenBalance: totalTokenBalance.toFixed(6),
+    totalPending: totalPending.toFixed(6),
+    totalAvailable: totalAvailable.toFixed(6),
+    realtimePending,
+    distribute,
     isPending,
     isConfirming,
     isSuccess,
     error,
-    refetchRewards: refetchAll,
+    refetch,
   };
 }
 
-// Hook for Referral operations
+// Hook for vault write actions (replaces useClaimAndRedeem)
+export function useVaultActions() {
+  const { address } = useAccount();
+
+  const {
+    writeContract: writeClaimContract,
+    data: claimHash,
+    isPending: isClaimPending,
+    error: claimError,
+  } = useWriteContract();
+
+  const {
+    writeContract: writeRedeemNFTContract,
+    data: redeemNFTHash,
+    isPending: isRedeemNFTPending,
+    error: redeemNFTError,
+  } = useWriteContract();
+
+  const {
+    writeContract: writeRedeemWalletContract,
+    data: redeemWalletHash,
+    isPending: isRedeemWalletPending,
+    error: redeemWalletError,
+  } = useWriteContract();
+
+  const {
+    writeContract: writeApproveContract,
+    data: approveHash,
+    isPending: isApprovePending,
+  } = useWriteContract();
+
+  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } =
+    useWaitForTransactionReceipt({ hash: claimHash });
+
+  const { isLoading: isRedeemNFTConfirming, isSuccess: isRedeemNFTSuccess } =
+    useWaitForTransactionReceipt({ hash: redeemNFTHash });
+
+  const {
+    isLoading: isRedeemWalletConfirming,
+    isSuccess: isRedeemWalletSuccess,
+  } = useWaitForTransactionReceipt({ hash: redeemWalletHash });
+
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } =
+    useWaitForTransactionReceipt({ hash: approveHash });
+
+  // Check token allowance for vault (needed for redeemFromWallet)
+  const { data: tokenAllowance, refetch: refetchAllowance } = useReadContract({
+    address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
+    abi: LIMITLESS_TOKEN_ABI,
+    functionName: "allowance",
+    args: address
+      ? [address, CONTRACTS.GENESIS_VAULT as `0x${string}`]
+      : undefined,
+  });
+
+  const claimTokens = async (tokenId: bigint, amount: string) => {
+    const amountWei = parseEther(amount);
+    writeClaimContract({
+      address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+      abi: GENESIS_VAULT_ABI,
+      functionName: "claimTokens",
+      args: [tokenId, amountWei],
+    });
+  };
+
+  const redeemFromNFT = async (tokenId: bigint, amount: string) => {
+    const amountWei = parseEther(amount);
+    writeRedeemNFTContract({
+      address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+      abi: GENESIS_VAULT_ABI,
+      functionName: "redeemFromNFT",
+      args: [tokenId, amountWei],
+    });
+  };
+
+  const approveTokenForVault = async (amount: string) => {
+    const amountWei = parseEther(amount);
+    writeApproveContract({
+      address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
+      abi: LIMITLESS_TOKEN_ABI,
+      functionName: "approve",
+      args: [CONTRACTS.GENESIS_VAULT as `0x${string}`, amountWei],
+    });
+  };
+
+  const redeemFromWallet = async (amount: string) => {
+    const amountWei = parseEther(amount);
+    writeRedeemWalletContract({
+      address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+      abi: GENESIS_VAULT_ABI,
+      functionName: "redeemFromWallet",
+      args: [amountWei],
+    });
+  };
+
+  const isPending =
+    isClaimPending ||
+    isRedeemNFTPending ||
+    isRedeemWalletPending ||
+    isApprovePending;
+  const isConfirming =
+    isClaimConfirming ||
+    isRedeemNFTConfirming ||
+    isRedeemWalletConfirming ||
+    isApproveConfirming;
+  const isSuccess =
+    isClaimSuccess || isRedeemNFTSuccess || isRedeemWalletSuccess;
+  const combinedError = claimError || redeemNFTError || redeemWalletError;
+
+  return {
+    claimTokens,
+    redeemFromNFT,
+    redeemFromWallet,
+    approveTokenForVault,
+    tokenAllowance: tokenAllowance
+      ? formatEther(tokenAllowance as bigint)
+      : "0",
+    refetchAllowance,
+    isApprovePending,
+    isApproveConfirming,
+    isApproveSuccess,
+    isPending,
+    isConfirming,
+    isSuccess,
+    isClaimSuccess,
+    isRedeemNFTSuccess,
+    isRedeemWalletSuccess,
+    error: combinedError,
+  };
+}
+
+// Hook for Referral operations — unchanged
 export function useReferralManager() {
   const { address } = useAccount();
 
@@ -421,124 +536,7 @@ export function useReferralManager() {
   };
 }
 
-// Hook for combined claim and redeem operations
-export function useClaimAndRedeem() {
-  const { address } = useAccount();
-  const {
-    writeContract: writeClaimContract,
-    data: claimHash,
-    isPending: isClaimPending,
-  } = useWriteContract();
-  const {
-    writeContract: writeRedeemContract,
-    data: redeemHash,
-    isPending: isRedeemPending,
-    error: redeemError,
-  } = useWriteContract();
-
-  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } =
-    useWaitForTransactionReceipt({
-      hash: claimHash,
-    });
-
-  const { isLoading: isRedeemConfirming, isSuccess: isRedeemSuccess } =
-    useWaitForTransactionReceipt({
-      hash: redeemHash,
-    });
-
-  const { data: rewardInfo } = useReadContract({
-    address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
-    abi: LIMITLESS_REWARDS_ABI,
-    functionName: "getUserRewardInfo",
-    args: address ? [address] : undefined,
-  });
-
-  const info = rewardInfo as
-    | [bigint, bigint, bigint, bigint, bigint]
-    | undefined;
-  const pendingRewardsRaw = info ? info[3] : BigInt(0);
-  const hasPendingRewards = pendingRewardsRaw > BigInt(0);
-
-  const claimAndRedeem = async (
-    redeemAmount: string,
-    onClaimComplete?: () => void,
-  ) => {
-    const amountWei = parseEther(redeemAmount);
-
-    // If there are pending rewards, claim first
-    if (hasPendingRewards) {
-      writeClaimContract(
-        {
-          address: CONTRACTS.LIMITLESS_REWARDS as `0x${string}`,
-          abi: LIMITLESS_REWARDS_ABI,
-          functionName: "claimRewards",
-        },
-        {
-          onSuccess: () => {
-            onClaimComplete?.();
-            // After claim succeeds, proceed with redeem
-            writeRedeemContract({
-              address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-              abi: BUYBACK_POOL_ABI,
-              functionName: "redeemTokens",
-              args: [amountWei],
-            });
-          },
-        },
-      );
-    } else {
-      // No pending rewards, just redeem directly
-      writeRedeemContract({
-        address: CONTRACTS.BUYBACK_POOL as `0x${string}`,
-        abi: BUYBACK_POOL_ABI,
-        functionName: "redeemTokens",
-        args: [amountWei],
-      });
-    }
-  };
-
-  return {
-    claimAndRedeem,
-    hasPendingRewards,
-    pendingRewards: formatEther(pendingRewardsRaw),
-    isClaimPending,
-    isClaimConfirming,
-    isClaimSuccess,
-    isRedeemPending,
-    isRedeemConfirming,
-    isRedeemSuccess,
-    isPending: isClaimPending || isRedeemPending,
-    isConfirming: isClaimConfirming || isRedeemConfirming,
-    isSuccess: isRedeemSuccess,
-    error: redeemError,
-  };
-}
-
-// Check token balance using useReadContract (more reliable for ERC20)
-// export function useTokenBalance(
-//   tokenAddress: `0x${string}`,
-//   accountAddress: `0x${string}` | undefined,
-// ) {
-//   const { data, isLoading, error } = useReadContract({
-//     address: tokenAddress,
-//     abi: ERC20_ABI,
-//     functionName: "balanceOf",
-//     args: accountAddress ? [accountAddress] : undefined,
-//     query: {
-//       enabled: !!accountAddress && accountAddress !== "0x0",
-//     },
-//   });
-
-//   console.log(data, "At rest soilder");
-
-//   return {
-//     data: data as bigint | undefined,
-//     isLoading,
-//     error,
-//   };
-// }
-
-// Hook for USDT approval
+// Hook for USDT approval — unchanged
 export function useStablecoin() {
   const { address, isConnected, chain } = useAccount();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
@@ -546,7 +544,6 @@ export function useStablecoin() {
     hash,
   });
 
-  // Debug: Log connection state
   console.log("=== useStablecoin Debug ===");
   console.log("Connected:", isConnected);
   console.log("Chain:", chain?.name, chain?.id);

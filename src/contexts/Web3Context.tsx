@@ -7,10 +7,11 @@ import {
   getDefaultConfig,
   darkTheme,
 } from "@rainbow-me/rainbowkit";
-import { bsc, bscTestnet, sepolia } from "wagmi/chains";
+import { bsc, bscTestnet, polygon, sepolia } from "wagmi/chains";
 
 // Use testnet for development, mainnet for production
-const activeChain = import.meta.env.VITE_USE_MAINNET === "true" ? bsc : sepolia;
+const activeChain =
+  import.meta.env.VITE_USE_MAINNET === "true" ? polygon : sepolia;
 
 // Create wagmi config with RainbowKit
 const config = getDefaultConfig({
@@ -23,6 +24,7 @@ const config = getDefaultConfig({
     [bsc.id]: http(),
     [bscTestnet.id]: http(),
     [sepolia.id]: http(),
+    [polygon.id]: http(),
   },
   ssr: false,
 });
