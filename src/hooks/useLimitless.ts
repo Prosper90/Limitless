@@ -74,7 +74,9 @@ export function useLimitlessNFT() {
   };
 
   return {
-    nftPrice: nftPrice ? formatUnits(nftPrice as bigint, stablecoinDecimals) : "1",
+    nftPrice: nftPrice
+      ? formatUnits(nftPrice as bigint, stablecoinDecimals)
+      : "1",
     totalMinted: totalMinted?.toString() || "0",
     userNFTBalance: userNFTBalance?.toString() || "0",
     userTokens: userTokens as bigint[] | undefined,
@@ -172,7 +174,11 @@ export function useVaultHistory(snapshotCount: number = 30) {
     functionName: "getHistoryLength",
   });
 
-  const { data: snapshots, isLoading, refetch } = useReadContract({
+  const {
+    data: snapshots,
+    isLoading,
+    refetch,
+  } = useReadContract({
     address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
     abi: GENESIS_VAULT_ABI,
     functionName: "getRecentSnapshots",
@@ -180,18 +186,24 @@ export function useVaultHistory(snapshotCount: number = 30) {
   });
 
   const chartData = snapshots
-    ? (snapshots as Array<{
-        timestamp: bigint;
-        totalBacking: bigint;
-        totalDistributed: bigint;
-        floorPrice: bigint;
-        activeNFTs: bigint;
-      }>).map((snapshot) => ({
+    ? (
+        snapshots as Array<{
+          timestamp: bigint;
+          totalBacking: bigint;
+          totalDistributed: bigint;
+          floorPrice: bigint;
+          activeNFTs: bigint;
+        }>
+      ).map((snapshot) => ({
         timestamp: Number(snapshot.timestamp) * 1000,
         date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
-        totalBacking: parseFloat(formatUnits(snapshot.totalBacking, stablecoinDecimals)),
+        totalBacking: parseFloat(
+          formatUnits(snapshot.totalBacking, stablecoinDecimals),
+        ),
         totalDistributed: parseFloat(formatEther(snapshot.totalDistributed)),
-        floorPrice: parseFloat(formatUnits(snapshot.floorPrice, stablecoinDecimals)),
+        floorPrice: parseFloat(
+          formatUnits(snapshot.floorPrice, stablecoinDecimals),
+        ),
         activeNFTs: Number(snapshot.activeNFTs),
       }))
     : [];
@@ -558,17 +570,15 @@ export function useReferralManager() {
 
 // Hook for USDT approval — uses dynamic stablecoin decimals
 export function useStablecoin() {
-  const { address, isConnected, chain } = useAccount();
+  // chain -- > add chain to the use Account values
+  const { address, isConnected } = useAccount();
   const stablecoinDecimals = useStablecoinDecimals();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
-  const {
-    data: balance,
-    refetch: refetchBalance,
-  } = useReadContract({
+  const { data: balance, refetch: refetchBalance } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
     abi: ERC20_ABI,
     functionName: "balanceOf",
@@ -605,7 +615,9 @@ export function useStablecoin() {
 
   return {
     balance: balance ? formatUnits(balance as bigint, stablecoinDecimals) : "0",
-    allowance: allowance ? formatUnits(allowance as bigint, stablecoinDecimals) : "0",
+    allowance: allowance
+      ? formatUnits(allowance as bigint, stablecoinDecimals)
+      : "0",
     symbol: (symbol as string) || "USDT",
     approve,
     isPending,
