@@ -6,7 +6,7 @@ import {
   useWaitForTransactionReceipt,
   useAccount,
 } from "wagmi";
-import { parseEther, formatEther } from "viem";
+import { parseEther, formatEther, parseUnits, formatUnits } from "viem";
 import {
   CONTRACTS,
   LIMITLESS_NFT_ABI,
@@ -16,9 +16,21 @@ import {
   ERC20_ABI,
 } from "../utils/contracts";
 
-// Hook for NFT operations — unchanged API
+// Hook to read stablecoin decimals dynamically
+// Supports 6-decimal tokens (Polygon USDT) and 18-decimal tokens (BSC USDT)
+export function useStablecoinDecimals(): number {
+  const { data: decimals } = useReadContract({
+    address: CONTRACTS.STABLECOIN as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: "decimals",
+  });
+  return (decimals as number) ?? 18;
+}
+
+// Hook for NFT operations
 export function useLimitlessNFT() {
   const { address } = useAccount();
+  const stablecoinDecimals = useStablecoinDecimals();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -62,7 +74,7 @@ export function useLimitlessNFT() {
   };
 
   return {
-    nftPrice: nftPrice ? formatEther(nftPrice as bigint) : "100",
+    nftPrice: nftPrice ? formatUnits(nftPrice as bigint, stablecoinDecimals) : "1",
     totalMinted: totalMinted?.toString() || "0",
     userNFTBalance: userNFTBalance?.toString() || "0",
     userTokens: userTokens as bigint[] | undefined,
@@ -102,6 +114,8 @@ export function useLimitlessToken() {
 
 // Hook for Genesis Vault stats (replaces useBuybackPool)
 export function useGenesisVault() {
+  const stablecoinDecimals = useStablecoinDecimals();
+
   const { data: vaultStats, refetch: refetchStats } = useReadContract({
     address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
     abi: GENESIS_VAULT_ABI,
@@ -126,16 +140,18 @@ export function useGenesisVault() {
     | undefined;
 
   return {
-    totalBacking: stats ? formatEther(stats[0]) : "0",
+    // USDT-denominated values — use stablecoin decimals
+    totalBacking: stats ? formatUnits(stats[0], stablecoinDecimals) : "0",
+    totalRedeemedUSDT: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
+    floorPrice: floorPriceRaw
+      ? formatUnits(floorPriceRaw as bigint, stablecoinDecimals)
+      : stats
+        ? formatUnits(stats[5], stablecoinDecimals)
+        : "0",
+    // Token-denominated values — always 18 decimals
     totalDistributed: stats ? formatEther(stats[1]) : "0",
     totalClaimed: stats ? formatEther(stats[2]) : "0",
     totalRedeemed: stats ? formatEther(stats[3]) : "0",
-    totalRedeemedUSDT: stats ? formatEther(stats[4]) : "0",
-    floorPrice: floorPriceRaw
-      ? formatEther(floorPriceRaw as bigint)
-      : stats
-        ? formatEther(stats[5])
-        : "0",
     activeNFTs: stats ? Number(stats[6]).toString() : "0",
     vaultTokenBalance: stats ? formatEther(stats[7]) : "0",
     dailyReward: stats ? formatEther(stats[8]) : "0",
@@ -148,6 +164,8 @@ export function useGenesisVault() {
 
 // Hook for Vault historical data — replaces useBuybackPoolHistory
 export function useVaultHistory(snapshotCount: number = 30) {
+  const stablecoinDecimals = useStablecoinDecimals();
+
   const { data: historyLength } = useReadContract({
     address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
     abi: GENESIS_VAULT_ABI,
@@ -171,9 +189,9 @@ export function useVaultHistory(snapshotCount: number = 30) {
       }>).map((snapshot) => ({
         timestamp: Number(snapshot.timestamp) * 1000,
         date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
-        totalBacking: parseFloat(formatEther(snapshot.totalBacking)),
+        totalBacking: parseFloat(formatUnits(snapshot.totalBacking, stablecoinDecimals)),
         totalDistributed: parseFloat(formatEther(snapshot.totalDistributed)),
-        floorPrice: parseFloat(formatEther(snapshot.floorPrice)),
+        floorPrice: parseFloat(formatUnits(snapshot.floorPrice, stablecoinDecimals)),
         activeNFTs: Number(snapshot.activeNFTs),
       }))
     : [];
@@ -189,6 +207,7 @@ export function useVaultHistory(snapshotCount: number = 30) {
 // Per-NFT rewards hook (replaces useLimitlessRewards)
 export function useNFTRewards(tokenIds: bigint[] | undefined) {
   const { address } = useAccount();
+  const stablecoinDecimals = useStablecoinDecimals();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -272,7 +291,7 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
       totalEarned: info ? formatEther(info[1]) : "0",
       totalClaimed: info ? formatEther(info[2]) : "0",
       totalRedeemed: info ? formatEther(info[3]) : "0",
-      liquidityValue: formatEther(liquidityValue),
+      liquidityValue: formatUnits(liquidityValue, stablecoinDecimals),
       isActive: info ? info[4] : false,
     };
   });
@@ -484,9 +503,10 @@ export function useVaultActions() {
   };
 }
 
-// Hook for Referral operations — unchanged
+// Hook for Referral operations
 export function useReferralManager() {
   const { address } = useAccount();
+  const stablecoinDecimals = useStablecoinDecimals();
 
   const { data: userData } = useReadContract({
     address: CONTRACTS.REFERRAL_MANAGER as `0x${string}`,
@@ -528,7 +548,7 @@ export function useReferralManager() {
     isRegistered: (isRegistered as boolean) ?? false,
     directReferrals: user ? user[2].toString() : "0",
     totalTeamSize: user ? user[3].toString() : "0",
-    totalEarned: user ? formatEther(user[4]) : "0",
+    totalEarned: user ? formatUnits(user[4], stablecoinDecimals) : "0",
     teamByLevels: levels
       ? levels.map((l) => l.toString())
       : ["0", "0", "0", "0", "0", "0"],
@@ -536,26 +556,18 @@ export function useReferralManager() {
   };
 }
 
-// Hook for USDT approval — unchanged
+// Hook for USDT approval — uses dynamic stablecoin decimals
 export function useStablecoin() {
   const { address, isConnected, chain } = useAccount();
+  const stablecoinDecimals = useStablecoinDecimals();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
 
-  console.log("=== useStablecoin Debug ===");
-  console.log("Connected:", isConnected);
-  console.log("Chain:", chain?.name, chain?.id);
-  console.log("User Address:", address);
-  console.log("Contract Address:", CONTRACTS.STABLECOIN);
-
   const {
     data: balance,
     refetch: refetchBalance,
-    error: balanceError,
-    isLoading: balanceLoading,
-    status: balanceStatus,
   } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
     abi: ERC20_ABI,
@@ -565,12 +577,6 @@ export function useStablecoin() {
       enabled: !!address && isConnected,
     },
   });
-
-  console.log("Balance Status:", balanceStatus);
-  console.log("Balance Loading:", balanceLoading);
-  console.log("Balance Data:", balance);
-  console.log("Balance Error:", balanceError);
-  console.log("=== End Debug ===");
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
@@ -588,7 +594,7 @@ export function useStablecoin() {
   });
 
   const approve = async (amount: string) => {
-    const amountWei = parseEther(amount);
+    const amountWei = parseUnits(amount, stablecoinDecimals);
     writeContract({
       address: CONTRACTS.STABLECOIN as `0x${string}`,
       abi: ERC20_ABI,
@@ -598,8 +604,8 @@ export function useStablecoin() {
   };
 
   return {
-    balance: balance ? formatEther(balance as bigint) : "0",
-    allowance: allowance ? formatEther(allowance as bigint) : "0",
+    balance: balance ? formatUnits(balance as bigint, stablecoinDecimals) : "0",
+    allowance: allowance ? formatUnits(allowance as bigint, stablecoinDecimals) : "0",
     symbol: (symbol as string) || "USDT",
     approve,
     isPending,
