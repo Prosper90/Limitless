@@ -37,7 +37,7 @@ export const Layout: React.FC<LayoutProps> = ({
   }, [location.search]);
 
   // Exempt admin (contract deployer) from referral requirement
-  const adminAddress = import.meta.env.VITE_OG_ADDRESS?.toLowerCase();
+  const adminAddress = import.meta.env.VITE_OG_ADDRESS?.toLowerCase()?.trim();
   const isAdmin = !!address && address.toLowerCase() === adminAddress;
 
   const navItems = [

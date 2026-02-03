@@ -141,15 +141,36 @@ export function useGenesisVault() {
     | [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
 
+  // Calculate floor price - use actual value or theoretical if no tokens distributed yet
+  const getFloorPriceDisplay = () => {
+    // Try actual floor price first
+    if (floorPriceRaw) {
+      const actualPrice = parseFloat(formatUnits(floorPriceRaw as bigint, stablecoinDecimals));
+      if (actualPrice > 0) return actualPrice.toString();
+    }
+    if (stats) {
+      const actualPrice = parseFloat(formatUnits(stats[5], stablecoinDecimals));
+      if (actualPrice > 0) return actualPrice.toString();
+    }
+
+    // If floor price is 0, calculate theoretical floor price
+    // Theoretical = totalBacking / activeNFTs (each NFT earns 1 token/day)
+    if (stats) {
+      const backing = parseFloat(formatUnits(stats[0], stablecoinDecimals));
+      const activeNFTs = Number(stats[6]);
+      if (backing > 0 && activeNFTs > 0) {
+        return (backing / activeNFTs).toString();
+      }
+    }
+
+    return "0";
+  };
+
   return {
     // USDC-denominated values — use stablecoin decimals
     totalBacking: stats ? formatUnits(stats[0], stablecoinDecimals) : "0",
     totalRedeemedUSDC: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
-    floorPrice: floorPriceRaw
-      ? formatUnits(floorPriceRaw as bigint, stablecoinDecimals)
-      : stats
-        ? formatUnits(stats[5], stablecoinDecimals)
-        : "0",
+    floorPrice: getFloorPriceDisplay(),
     // Token-denominated values — always 18 decimals
     totalDistributed: stats ? formatEther(stats[1]) : "0",
     totalClaimed: stats ? formatEther(stats[2]) : "0",
@@ -194,18 +215,34 @@ export function useVaultHistory(snapshotCount: number = 30) {
           floorPrice: bigint;
           activeNFTs: bigint;
         }>
-      ).map((snapshot) => ({
-        timestamp: Number(snapshot.timestamp) * 1000,
-        date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
-        totalBacking: parseFloat(
+      ).map((snapshot) => {
+        const totalBacking = parseFloat(
           formatUnits(snapshot.totalBacking, stablecoinDecimals),
-        ),
-        totalDistributed: parseFloat(formatEther(snapshot.totalDistributed)),
-        floorPrice: parseFloat(
+        );
+        const totalDistributed = parseFloat(formatEther(snapshot.totalDistributed));
+        const activeNFTs = Number(snapshot.activeNFTs);
+
+        // Calculate floor price - if no tokens distributed yet, calculate theoretical price
+        // Theoretical = totalBacking / activeNFTs (backing per NFT, which equals price per token after 1 day)
+        let floorPrice = parseFloat(
           formatUnits(snapshot.floorPrice, stablecoinDecimals),
-        ),
-        activeNFTs: Number(snapshot.activeNFTs),
-      }))
+        );
+
+        // If floor price is 0 but we have backing and NFTs, calculate theoretical floor price
+        // Each NFT earns 1 token/day, so after 1 day: floorPrice = totalBacking / totalNFTs
+        if (floorPrice === 0 && totalBacking > 0 && activeNFTs > 0) {
+          floorPrice = totalBacking / activeNFTs;
+        }
+
+        return {
+          timestamp: Number(snapshot.timestamp) * 1000,
+          date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
+          totalBacking,
+          totalDistributed,
+          floorPrice,
+          activeNFTs,
+        };
+      })
     : [];
 
   return {
@@ -314,14 +351,25 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
   const nftCount = nfts.filter((n) => n.isActive).length;
 
   // Calculate sub-day pending based on actual elapsed time
+  // Each NFT earns 1 token per day, so we show progress toward that token
   const computeSubDayPending = useCallback(() => {
     if (nftCount === 0) return 0;
     const now = Math.floor(Date.now() / 1000);
     let subDayTotal = 0;
     for (const nft of nfts) {
-      if (!nft.isActive || nft.lastDistributionTime === 0) continue;
+      if (!nft.isActive) continue;
+
+      // If lastDistributionTime is 0 or not set, use a small default
+      // to ensure the ticker starts immediately after minting
+      if (nft.lastDistributionTime === 0) {
+        // NFT just registered, start counting from now
+        subDayTotal += 0.000001; // Small initial value to show it's active
+        continue;
+      }
+
       const elapsed = now - nft.lastDistributionTime;
-      // Fractional part: seconds within current day cycle
+      // Total elapsed time contributes to pending (full days + partial day)
+      // Full days are already in contract's pending, we add the sub-day fraction
       const subDaySeconds = elapsed % 86400;
       subDayTotal += subDaySeconds / 86400; // fraction of 1 token
     }
