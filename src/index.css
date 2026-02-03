@@ -250,6 +250,22 @@ input[type="number"]::-webkit-inner-spin-button {
   color: var(--tg-body-color);
 }
 
+/* Dark theme for select dropdowns */
+select.nerko-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237b7583' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+select.nerko-input option {
+  background-color: #1a1a2e;
+  color: #e5e7eb;
+  padding: 10px;
+}
+
 /* Section Styles */
 .section-title {
   font-size: 44px;

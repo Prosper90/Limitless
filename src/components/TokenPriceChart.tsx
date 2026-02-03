@@ -61,7 +61,9 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
     return (
       <div className="bg-gray-900/95 border border-white/10 rounded-lg p-3 shadow-xl">
         <p className="text-gray-400 text-xs mb-1">{label}</p>
-        <p className="text-white font-bold">{metric.format(payload[0].value)}</p>
+        <p className="text-white font-bold">
+          {metric.format(payload[0].value)}
+        </p>
       </div>
     );
   }
@@ -69,7 +71,8 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
 };
 
 export const TokenPriceChart: React.FC = () => {
-  const [selectedMetric, setSelectedMetric] = useState<ChartMetric>("floorPrice");
+  const [selectedMetric, setSelectedMetric] =
+    useState<ChartMetric>("floorPrice");
   const { chartData, isLoading, historyLength } = useVaultHistory(30);
 
   const currentMetric = metrics.find((m) => m.key === selectedMetric)!;
@@ -202,9 +205,23 @@ export const TokenPriceChart: React.FC = () => {
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           >
             <defs>
-              <linearGradient id={currentMetric.gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={currentMetric.color} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={currentMetric.color} stopOpacity={0} />
+              <linearGradient
+                id={currentMetric.gradientId}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop
+                  offset="5%"
+                  stopColor={currentMetric.color}
+                  stopOpacity={0.3}
+                />
+                <stop
+                  offset="95%"
+                  stopColor={currentMetric.color}
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid
@@ -242,9 +259,16 @@ export const TokenPriceChart: React.FC = () => {
       {/* Current Value */}
       {chartData.length > 0 && (
         <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-          <span className="text-gray-400 text-sm">Current {currentMetric.label}</span>
-          <span className="font-bold text-lg" style={{ color: currentMetric.color }}>
-            {currentMetric.format(chartData[chartData.length - 1][selectedMetric])}
+          <span className="text-gray-400 text-sm">
+            Current {currentMetric.label}
+          </span>
+          <span
+            className="font-bold text-lg"
+            style={{ color: currentMetric.color }}
+          >
+            {currentMetric.format(
+              chartData[chartData.length - 1][selectedMetric],
+            )}
           </span>
         </div>
       )}

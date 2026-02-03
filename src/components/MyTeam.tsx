@@ -12,7 +12,7 @@ export const MyTeam: React.FC = () => {
     totalTeamSize,
     totalEarned,
     teamByLevels,
-    commissionCount,
+    //commissionCount,
   } = useReferralManager();
 
   // Commission amounts per level
@@ -228,7 +228,7 @@ export const MyTeam: React.FC = () => {
               ${parseFloat(totalEarned).toFixed(2)}
             </p>
           </div>
-          <div className="nerko-card hover-lift">
+          {/* <div className="nerko-card hover-lift">
             <div className="w-10 h-10 rounded-lg bg-orange-600/20 flex items-center justify-center mb-3">
               <svg
                 className="w-5 h-5 text-orange-400"
@@ -246,7 +246,7 @@ export const MyTeam: React.FC = () => {
             </div>
             <p className="text-gray-400 text-sm">Commission Txns</p>
             <p className="text-2xl font-bold mt-1">{commissionCount}</p>
-          </div>
+          </div> */}
         </div>
 
         {/* Team by Levels */}

@@ -65,7 +65,7 @@ const HeroSection: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-gray-400 text-sm">Price</p>
-                    <p className="font-bold text-xl">$100 USDT</p>
+                    <p className="font-bold text-xl">$100 USDC</p>
                   </div>
                 </div>
               </div>
@@ -132,7 +132,7 @@ const HowItWorksSection: React.FC = () => {
       number: "02",
       title: "Buy NFT",
       description:
-        "Purchase an NFT for $100 USDT. Each NFT earns you 1 token per day forever.",
+        "Purchase an NFT for $100 USDC. Each NFT earns you 1 token per day forever.",
       image: "/mint-02.png",
     },
     {
@@ -266,7 +266,7 @@ const FeaturesSection: React.FC = () => {
       ),
       title: "Trade & Redeem",
       description:
-        "Redeem your tokens anytime at the guaranteed floor price to get USDT.",
+        "Redeem your tokens anytime at the guaranteed floor price to get USDC.",
     },
     {
       icon: (
@@ -517,7 +517,7 @@ const FeaturesSection: React.FC = () => {
 //     {
 //       question: "What is LIMITLESS?",
 //       answer:
-//         "LIMITLESS is a DeFi NFT platform on BSC where you can purchase NFTs that earn you daily token rewards forever. Each NFT costs $100 USDT and generates 1 LIMITLESS token per day.",
+//         "LIMITLESS is a DeFi NFT platform on BSC where you can purchase NFTs that earn you daily token rewards forever. Each NFT costs $100 USDC and generates 1 LIMITLESS token per day.",
 //     },
 //     {
 //       question: "How do I earn daily rewards?",
@@ -532,7 +532,7 @@ const FeaturesSection: React.FC = () => {
 //     {
 //       question: "What can I do with LIMITLESS tokens?",
 //       answer:
-//         "You can burn (redeem) your LIMITLESS tokens for USDT from the liquidity pool at the current token price, or hold them as the value grows with the ecosystem.",
+//         "You can burn (redeem) your LIMITLESS tokens for USDC from the liquidity pool at the current token price, or hold them as the value grows with the ecosystem.",
 //     },
 //     {
 //       question: "Is this safe and audited?",
@@ -610,7 +610,7 @@ const CTASection: React.FC = () => {
             </h2>
             <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
               Join thousands of users earning daily rewards. Start your journey
-              today with just $100 USDT.
+              today with just $100 USDC.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/buy" className="btn btn-gradient btn-gradient-lg">

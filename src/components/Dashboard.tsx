@@ -53,8 +53,13 @@ export const Dashboard: React.FC = () => {
   const { totalTeamSize, totalEarned } = useReferralManager();
 
   // Aggregate token balance: wallet + NFT balances
-  const totalTokenBalance =
-    parseFloat(tokenBalance) + parseFloat(nftRewards.totalTokenBalance);
+  // Total available = wallet + all NFT balances + all pending
+  const walletBal = parseFloat(tokenBalance);
+  const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
+  const pendingTotal = parseFloat(nftRewards.realtimePending);
+  const totalTokenBalance = walletBal + nftTokenTotal + pendingTotal;
+  // const totalTokenBalance =
+  //   parseFloat(tokenBalance) + parseFloat(nftRewards.totalTokenBalance);
 
   // Format large numbers
   const formatNumber = (num: string) => {
@@ -321,7 +326,7 @@ export const Dashboard: React.FC = () => {
           <StatCard
             title="Total Vault Backing"
             value={formatUSD(totalBacking)}
-            subtitle="USDT backing the vault"
+            subtitle="USDC backing the vault"
             gradient
           />
           <StatCard
@@ -352,7 +357,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="font-bold mb-2">Purchase NFT</h3>
               <p className="text-gray-400 text-sm">
-                Buy a LIMITLESS NFT for $100 USDT. $25 backs the Genesis Vault,
+                Buy a LIMITLESS NFT for $100 USDC. $25 backs the Genesis Vault,
                 establishing a guaranteed floor price.
               </p>
             </div>
@@ -376,7 +381,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="font-bold mb-2">Redeem Anytime</h3>
               <p className="text-gray-400 text-sm">
-                Redeem tokens at the guaranteed floor price for USDT.
+                Redeem tokens at the guaranteed floor price for USDC.
               </p>
             </div>
           </div>

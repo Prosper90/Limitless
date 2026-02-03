@@ -8,10 +8,10 @@ import BuyNFT from "./components/BuyNFT";
 import MyTokens from "./components/MyTokens";
 import MyTeam from "./components/MyTeam";
 
-// Landing Page (Home) - No wallet required
+// Landing Page (Home) - No wallet or referral required
 const HomePage: React.FC = () => {
   return (
-    <Layout showWalletRequired={false}>
+    <Layout showWalletRequired={false} showReferralRequired={false}>
       <Landing />
     </Layout>
   );

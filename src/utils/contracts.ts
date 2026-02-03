@@ -253,9 +253,25 @@ export const GENESIS_VAULT_ABI = [
     inputs: [{ name: "tokenId", type: "uint256" }],
     outputs: [
       { name: "tokenBalance", type: "uint256" },
+      { name: "pendingTokens", type: "uint256" },
       { name: "totalEarned", type: "uint256" },
       { name: "totalClaimed", type: "uint256" },
       { name: "totalRedeemed", type: "uint256" },
+      { name: "liquidityValue", type: "uint256" },
+      { name: "isActive", type: "bool" },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "nftBalances",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [
+      { name: "tokenBalance", type: "uint256" },
+      { name: "totalEarned", type: "uint256" },
+      { name: "totalClaimed", type: "uint256" },
+      { name: "totalRedeemed", type: "uint256" },
+      { name: "lastDistributionTime", type: "uint256" },
       { name: "isActive", type: "bool" },
     ],
     stateMutability: "view",
@@ -520,7 +536,7 @@ export const REFERRAL_MANAGER_ABI = [
   },
 ] as const;
 
-// ERC20 ABI (for USDT/USDC) - Using JSON format for wagmi v2 compatibility
+// ERC20 ABI (for USDC) - Using JSON format for wagmi v2 compatibility
 export const ERC20_ABI = [
   {
     type: "function",

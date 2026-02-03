@@ -13,15 +13,15 @@ export const MyTokens: React.FC = () => {
   const [redeemAmount, setRedeemAmount] = useState("");
   const [redeemMode, setRedeemMode] = useState<RedeemMode>("fromNFT");
   const [selectedNFT, setSelectedNFT] = useState<number | null>(null);
-  const [claimAmount, setClaimAmount] = useState("");
-  const [claimNFT, setClaimNFT] = useState<number | null>(null);
+  // const [claimAmount, setClaimAmount] = useState("");
+  // const [claimNFT, setClaimNFT] = useState<number | null>(null);
 
   const { userTokens, userNFTBalance } = useLimitlessNFT();
   const { tokenBalance, refetchBalance } = useLimitlessToken();
   const { floorPrice, minRedemption, totalBacking } = useGenesisVault();
   const nftRewards = useNFTRewards(userTokens);
   const {
-    claimTokens,
+    //claimTokens,
     redeemFromNFT,
     redeemFromWallet,
     approveTokenForVault,
@@ -37,7 +37,7 @@ export const MyTokens: React.FC = () => {
   // Total available = wallet + all NFT balances + all pending
   const walletBal = parseFloat(tokenBalance);
   const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
-  const pendingTotal = parseFloat(nftRewards.totalPending);
+  const pendingTotal = parseFloat(nftRewards.realtimePending);
   const totalAvailable = walletBal + nftTokenTotal + pendingTotal;
 
   const handleRedeem = async () => {
@@ -59,14 +59,14 @@ export const MyTokens: React.FC = () => {
     setRedeemAmount("");
   };
 
-  const handleClaim = async () => {
-    if (!claimAmount || parseFloat(claimAmount) <= 0 || claimNFT === null)
-      return;
-    await claimTokens(BigInt(claimNFT), claimAmount);
-    refetchBalance();
-    nftRewards.refetch();
-    setClaimAmount("");
-  };
+  // const handleClaim = async () => {
+  //   if (!claimAmount || parseFloat(claimAmount) <= 0 || claimNFT === null)
+  //     return;
+  //   await claimTokens(BigInt(claimNFT), claimAmount);
+  //   refetchBalance();
+  //   nftRewards.refetch();
+  //   setClaimAmount("");
+  // };
 
   // Refetch allowance after approval
   React.useEffect(() => {
@@ -85,12 +85,12 @@ export const MyTokens: React.FC = () => {
     }
   };
 
-  const handleMaxClaim = () => {
-    if (claimNFT !== null) {
-      const nft = nftRewards.nfts.find((n) => n.tokenId === claimNFT);
-      if (nft) setClaimAmount(nft.tokenBalance);
-    }
-  };
+  // const handleMaxClaim = () => {
+  //   if (claimNFT !== null) {
+  //     const nft = nftRewards.nfts.find((n) => n.tokenId === claimNFT);
+  //     if (nft) setClaimAmount(nft.tokenBalance);
+  //   }
+  // };
 
   const estimatedRedemption = () => {
     if (!redeemAmount || parseFloat(redeemAmount) <= 0) return "0";
@@ -121,7 +121,7 @@ export const MyTokens: React.FC = () => {
             Manage Your <span className="gradient-text">Tokens</span>
           </h1>
           <p className="text-gray-400">
-            Your tokens grow daily. Redeem anytime for USDT at the guaranteed
+            Your tokens grow daily. Redeem anytime for USDC at the guaranteed
             floor price.
           </p>
         </div>
@@ -159,9 +159,7 @@ export const MyTokens: React.FC = () => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">NFT Token Balances</span>
-                <span className="font-medium">
-                  {nftTokenTotal.toFixed(4)}
-                </span>
+                <span className="font-medium">{nftTokenTotal.toFixed(4)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Pending Rewards</span>
@@ -240,7 +238,7 @@ export const MyTokens: React.FC = () => {
           </div>
         </div>
 
-        {/* Claim Tokens to Wallet */}
+        {/* Claim Tokens to Wallet 
         <div className="nerko-card mb-8">
           <div className="flex items-start justify-between mb-6">
             <div>
@@ -267,7 +265,6 @@ export const MyTokens: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {/* NFT selector */}
             <div>
               <label className="text-sm text-gray-400 mb-2 block">
                 Select NFT
@@ -289,7 +286,6 @@ export const MyTokens: React.FC = () => {
               </select>
             </div>
 
-            {/* Amount */}
             <div>
               <label className="text-sm text-gray-400 mb-2 block">
                 Amount to Claim
@@ -350,14 +346,13 @@ export const MyTokens: React.FC = () => {
             </button>
           </div>
         </div>
+       */}
 
         {/* Redeem Tokens Section */}
         <div className="nerko-card mb-8">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="font-bold text-xl mb-1">
-                Redeem Tokens for USDT
-              </h2>
+              <h2 className="font-bold text-xl mb-1">Redeem Tokens for USDC</h2>
               <p className="text-gray-400 text-sm">
                 Redeem at guaranteed floor price
               </p>
@@ -392,7 +387,7 @@ export const MyTokens: React.FC = () => {
               >
                 Redeem from NFT
               </button>
-              <button
+              {/* <button
                 onClick={() => setRedeemMode("fromWallet")}
                 className={`flex-1 py-3 rounded-xl font-medium transition-all ${
                   redeemMode === "fromWallet"
@@ -401,7 +396,7 @@ export const MyTokens: React.FC = () => {
                 }`}
               >
                 Redeem from Wallet
-              </button>
+              </button> */}
             </div>
 
             {/* NFT selector (only for fromNFT) */}
@@ -469,16 +464,16 @@ export const MyTokens: React.FC = () => {
                 </div>
                 <div className="border-t border-white/10 pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Estimated USDT</span>
+                    <span className="text-gray-400">Estimated USDC</span>
                     <span className="font-bold text-2xl text-green-400">
-                      ~${estimatedRedemption()} USDT
+                      ~${estimatedRedemption()} USDC
                     </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Floor Price</span>
                   <span className="text-gray-400">
-                    1 LIMITLESS = ${parseFloat(floorPrice).toFixed(6)} USDT
+                    1 LIMITLESS = ${parseFloat(floorPrice).toFixed(6)} USDC
                   </span>
                 </div>
                 <p className="text-gray-500 text-xs">
@@ -535,7 +530,7 @@ export const MyTokens: React.FC = () => {
                       d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  Redeem for USDT
+                  Redeem for USDC
                 </span>
               )}
             </button>
@@ -543,7 +538,7 @@ export const MyTokens: React.FC = () => {
             {actionSuccess && (
               <div className="p-4 bg-green-600/20 border border-green-600/30 rounded-xl text-center">
                 <p className="text-green-400 font-semibold">
-                  Transaction successful! USDT sent to your wallet.
+                  Transaction successful! USDC sent to your wallet.
                 </p>
               </div>
             )}

@@ -17,7 +17,7 @@ import {
 } from "../utils/contracts";
 
 // Hook to read stablecoin decimals dynamically
-// Supports 6-decimal tokens (Polygon USDT) and 18-decimal tokens (BSC USDT)
+// Supports 6-decimal tokens (Polygon USDC) and 18-decimal tokens
 export function useStablecoinDecimals(): number {
   const { data: decimals } = useReadContract({
     address: CONTRACTS.STABLECOIN as `0x${string}`,
@@ -136,15 +136,15 @@ export function useGenesisVault() {
     functionName: "minRedemptionAmount",
   });
 
-  // Stats: [backing, distributed, claimed, redeemed, redeemedUSDT, floorPrice, activeNFTs, vaultTokenBalance, dailyReward]
+  // Stats: [backing, distributed, claimed, redeemed, redeemedUSDC, floorPrice, activeNFTs, vaultTokenBalance, dailyReward]
   const stats = vaultStats as
     | [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
 
   return {
-    // USDT-denominated values — use stablecoin decimals
+    // USDC-denominated values — use stablecoin decimals
     totalBacking: stats ? formatUnits(stats[0], stablecoinDecimals) : "0",
-    totalRedeemedUSDT: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
+    totalRedeemedUSDC: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
     floorPrice: floorPriceRaw
       ? formatUnits(floorPriceRaw as bigint, stablecoinDecimals)
       : stats
@@ -227,7 +227,7 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
 
   const [realtimePending, setRealtimePending] = useState("0");
 
-  // Build multicall contract reads for getNFTInfo per tokenId
+  // getNFTInfo returns 7 fields: tokenBalance, pendingTokens, totalEarned, totalClaimed, totalRedeemed, liquidityValue, isActive
   const nftInfoContracts = (tokenIds || []).map((tokenId) => ({
     address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
     abi: GENESIS_VAULT_ABI,
@@ -235,19 +235,11 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     args: [tokenId],
   }));
 
-  // Build multicall contract reads for calculatePending per tokenId
-  const pendingContracts = (tokenIds || []).map((tokenId) => ({
+  // nftBalances returns lastDistributionTime for sub-day ticker
+  const nftBalancesContracts = (tokenIds || []).map((tokenId) => ({
     address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
     abi: GENESIS_VAULT_ABI,
-    functionName: "calculatePending" as const,
-    args: [tokenId],
-  }));
-
-  // Build multicall for liquidity values
-  const liquidityContracts = (tokenIds || []).map((tokenId) => ({
-    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
-    abi: GENESIS_VAULT_ABI,
-    functionName: "getNFTLiquidityValue" as const,
+    functionName: "nftBalances" as const,
     args: [tokenId],
   }));
 
@@ -256,14 +248,9 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     query: { enabled: (tokenIds || []).length > 0 },
   });
 
-  const { data: pendingResults, refetch: refetchPending } = useReadContracts({
-    contracts: pendingContracts,
-    query: { enabled: (tokenIds || []).length > 0 },
-  });
-
-  const { data: liquidityResults, refetch: refetchLiquidity } =
+  const { data: nftBalancesResults, refetch: refetchBalances } =
     useReadContracts({
-      contracts: liquidityContracts,
+      contracts: nftBalancesContracts,
       query: { enabled: (tokenIds || []).length > 0 },
     });
 
@@ -275,36 +262,37 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     args: address ? [address] : undefined,
   });
 
-  // Build NFT data array
+  // Build NFT data array from 7-field getNFTInfo
   const nfts = (tokenIds || []).map((tokenId, i) => {
     const infoResult = nftInfoResults?.[i];
-    const pendingResult = pendingResults?.[i];
-    const liquidityResult = liquidityResults?.[i];
+    const balResult = nftBalancesResults?.[i];
 
+    // getNFTInfo: [tokenBalance, pendingTokens, totalEarned, totalClaimed, totalRedeemed, liquidityValue, isActive]
     const info =
       infoResult?.status === "success"
-        ? (infoResult.result as [bigint, bigint, bigint, bigint, boolean])
+        ? (infoResult.result as [bigint, bigint, bigint, bigint, bigint, bigint, boolean])
         : undefined;
-    const pending =
-      pendingResult?.status === "success"
-        ? (pendingResult.result as bigint)
-        : BigInt(0);
-    const liquidityValue =
-      liquidityResult?.status === "success"
-        ? (liquidityResult.result as bigint)
-        : BigInt(0);
+
+    // nftBalances: [tokenBalance, totalEarned, totalClaimed, totalRedeemed, lastDistributionTime, isActive]
+    const balData =
+      balResult?.status === "success"
+        ? (balResult.result as [bigint, bigint, bigint, bigint, bigint, boolean])
+        : undefined;
+
+    const lastDistributionTime = balData ? Number(balData[4]) : 0;
 
     return {
       tokenId: Number(tokenId),
       tokenBalance: info ? formatEther(info[0]) : "0",
       tokenBalanceRaw: info ? info[0] : BigInt(0),
-      pending: formatEther(pending),
-      pendingRaw: pending,
-      totalEarned: info ? formatEther(info[1]) : "0",
-      totalClaimed: info ? formatEther(info[2]) : "0",
-      totalRedeemed: info ? formatEther(info[3]) : "0",
-      liquidityValue: formatUnits(liquidityValue, stablecoinDecimals),
-      isActive: info ? info[4] : false,
+      pending: info ? formatEther(info[1]) : "0",
+      pendingRaw: info ? info[1] : BigInt(0),
+      totalEarned: info ? formatEther(info[2]) : "0",
+      totalClaimed: info ? formatEther(info[3]) : "0",
+      totalRedeemed: info ? formatEther(info[4]) : "0",
+      liquidityValue: info ? formatUnits(info[5], stablecoinDecimals) : "0",
+      isActive: info ? info[6] : false,
+      lastDistributionTime,
     };
   });
 
@@ -322,39 +310,53 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     : 0;
   const totalAvailable = totalTokenBalance + totalPending + walletBal;
 
-  // Real-time pending ticker (increment based on NFT count)
+  // Real-time sub-day ticker: compute fractional pending from lastDistributionTime
   const nftCount = nfts.filter((n) => n.isActive).length;
-  const calculateRealtime = useCallback(() => {
+
+  // Calculate sub-day pending based on actual elapsed time
+  const computeSubDayPending = useCallback(() => {
+    if (nftCount === 0) return 0;
+    const now = Math.floor(Date.now() / 1000);
+    let subDayTotal = 0;
+    for (const nft of nfts) {
+      if (!nft.isActive || nft.lastDistributionTime === 0) continue;
+      const elapsed = now - nft.lastDistributionTime;
+      // Fractional part: seconds within current day cycle
+      const subDaySeconds = elapsed % 86400;
+      subDayTotal += subDaySeconds / 86400; // fraction of 1 token
+    }
+    return subDayTotal;
+  }, [nfts, nftCount]);
+
+  // Initialize and tick the realtime pending display
+  useEffect(() => {
+    const subDay = computeSubDayPending();
+    setRealtimePending((totalPending + subDay).toFixed(6));
+  }, [totalPending, computeSubDayPending]);
+
+  useEffect(() => {
     if (nftCount === 0) {
       setRealtimePending("0");
       return;
     }
-    // Add a tiny increment per second for visual ticker effect
     const perSecond = nftCount / 86400;
-    setRealtimePending((prev) => {
-      const current = parseFloat(prev) || totalPending;
-      return (current + perSecond).toFixed(6);
-    });
-  }, [nftCount, totalPending]);
-
-  useEffect(() => {
-    setRealtimePending(totalPending.toFixed(6));
-  }, [totalPending]);
-
-  useEffect(() => {
-    const interval = setInterval(calculateRealtime, 1000);
+    const interval = setInterval(() => {
+      setRealtimePending((prev) => {
+        const current = parseFloat(prev);
+        return (current + perSecond).toFixed(6);
+      });
+    }, 1000);
     return () => clearInterval(interval);
-  }, [calculateRealtime]);
+  }, [nftCount]);
 
   // Auto-refresh contract data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       refetchInfo();
-      refetchPending();
-      refetchLiquidity();
+      refetchBalances();
     }, 30000);
     return () => clearInterval(interval);
-  }, [refetchInfo, refetchPending, refetchLiquidity]);
+  }, [refetchInfo, refetchBalances]);
 
   const distribute = async (tokenId: bigint) => {
     writeContract({
@@ -366,8 +368,8 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
   };
 
   const refetch = useCallback(async () => {
-    await Promise.all([refetchInfo(), refetchPending(), refetchLiquidity()]);
-  }, [refetchInfo, refetchPending, refetchLiquidity]);
+    await Promise.all([refetchInfo(), refetchBalances()]);
+  }, [refetchInfo, refetchBalances]);
 
   return {
     nfts,
@@ -568,7 +570,7 @@ export function useReferralManager() {
   };
 }
 
-// Hook for USDT approval — uses dynamic stablecoin decimals
+// Hook for USDC approval — uses dynamic stablecoin decimals
 export function useStablecoin() {
   // chain -- > add chain to the use Account values
   const { address, isConnected } = useAccount();
@@ -618,7 +620,7 @@ export function useStablecoin() {
     allowance: allowance
       ? formatUnits(allowance as bigint, stablecoinDecimals)
       : "0",
-    symbol: (symbol as string) || "USDT",
+    symbol: (symbol as string) || "USDC",
     approve,
     isPending,
     isConfirming,

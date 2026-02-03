@@ -6,16 +6,39 @@ import { useAccount } from "wagmi";
 interface LayoutProps {
   children: React.ReactNode;
   showWalletRequired?: boolean;
+  showReferralRequired?: boolean;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
   children,
   showWalletRequired = true,
+  showReferralRequired = true,
 }) => {
   const location = useLocation();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [hasReferral, setHasReferral] = useState(false);
+
+  // Check URL for referral param and persist to localStorage
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get("ref");
+
+    if (ref && ref.startsWith("0x") && ref.length === 42) {
+      localStorage.setItem("limitless_referral", ref);
+      setHasReferral(true);
+    } else {
+      const storedRef = localStorage.getItem("limitless_referral");
+      if (storedRef && storedRef.startsWith("0x") && storedRef.length === 42) {
+        setHasReferral(true);
+      }
+    }
+  }, [location.search]);
+
+  // Exempt admin (contract deployer) from referral requirement
+  const adminAddress = import.meta.env.VITE_OG_ADDRESS?.toLowerCase();
+  const isAdmin = !!address && address.toLowerCase() === adminAddress;
 
   const navItems = [
     { path: "/", label: "Home" },
@@ -197,7 +220,37 @@ export const Layout: React.FC<LayoutProps> = ({
 
       {/* Main Content */}
       <main className="flex-1 pt-20">
-        {showWalletRequired && !isConnected ? (
+        {showReferralRequired && !hasReferral && !isAdmin ? (
+          /* Tier 1: Referral required but missing */
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="text-center px-4">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 flex items-center justify-center">
+                <svg
+                  className="w-10 h-10 text-purple-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                Referral Required
+              </h2>
+              <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                You need a referral link to access the LIMITLESS platform.
+                Please ask someone in the community to share their referral link
+                with you.
+              </p>
+            </div>
+          </div>
+        ) : showWalletRequired && !isConnected ? (
+          /* Tier 2: Wallet connection required */
           <div className="min-h-[60vh] flex items-center justify-center">
             <div className="text-center px-4">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 flex items-center justify-center">
@@ -219,8 +272,8 @@ export const Layout: React.FC<LayoutProps> = ({
                 Connect Your Wallet
               </h2>
               <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                Please connect your BSC wallet to access the LIMITLESS platform
-                and start earning
+                Please connect your wallet to access the LIMITLESS platform and
+                start earning
               </p>
               <ConnectButton.Custom>
                 {({ openConnectModal, mounted }) => (
