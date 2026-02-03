@@ -142,19 +142,23 @@ export function useGenesisVault() {
     | undefined;
 
   // Parse values from stats
-  const totalBackingValue = stats ? parseFloat(formatUnits(stats[0], stablecoinDecimals)) : 0;
-  const totalDistributedValue = stats ? parseFloat(formatEther(stats[1])) : 0;
+  const totalBackingValue = stats
+    ? parseFloat(formatUnits(stats[0], stablecoinDecimals))
+    : 0;
+  //const totalDistributedValue = stats ? parseFloat(formatEther(stats[1])) : 0;
   const activeNFTsValue = stats ? Number(stats[6]) : 0;
 
   // Debug logging - remove after fixing
   console.log("useGenesisVault Debug:", {
     stablecoinDecimals,
-    statsRaw: stats ? {
-      backing: stats[0]?.toString(),
-      distributed: stats[1]?.toString(),
-      activeNFTs: stats[6]?.toString(),
-      floorPriceFromStats: stats[5]?.toString(),
-    } : "no stats",
+    statsRaw: stats
+      ? {
+          backing: stats[0]?.toString(),
+          distributed: stats[1]?.toString(),
+          activeNFTs: stats[6]?.toString(),
+          floorPriceFromStats: stats[5]?.toString(),
+        }
+      : "no stats",
     floorPriceRaw: floorPriceRaw?.toString(),
     totalBackingValue,
     activeNFTsValue,
@@ -164,7 +168,9 @@ export function useGenesisVault() {
   // Actual floor price from contract (if tokens have been distributed)
   let floorPriceValue = 0;
   if (floorPriceRaw) {
-    floorPriceValue = parseFloat(formatUnits(floorPriceRaw as bigint, stablecoinDecimals));
+    floorPriceValue = parseFloat(
+      formatUnits(floorPriceRaw as bigint, stablecoinDecimals),
+    );
   } else if (stats && stats[5] > BigInt(0)) {
     floorPriceValue = parseFloat(formatUnits(stats[5], stablecoinDecimals));
   }
@@ -221,11 +227,13 @@ export function useVaultHistory(snapshotCount: number = 30) {
   console.log("useVaultHistory Debug:", {
     stablecoinDecimals,
     historyLength: historyLength?.toString(),
-    snapshotsRaw: snapshots ? (snapshots as Array<any>).map(s => ({
-      backing: s.totalBacking?.toString(),
-      floorPrice: s.floorPrice?.toString(),
-      activeNFTs: s.activeNFTs?.toString(),
-    })) : "no snapshots",
+    snapshotsRaw: snapshots
+      ? (snapshots as Array<any>).map((s) => ({
+          backing: s.totalBacking?.toString(),
+          floorPrice: s.floorPrice?.toString(),
+          activeNFTs: s.activeNFTs?.toString(),
+        }))
+      : "no snapshots",
   });
 
   const chartData = snapshots
@@ -241,7 +249,9 @@ export function useVaultHistory(snapshotCount: number = 30) {
         const totalBacking = parseFloat(
           formatUnits(snapshot.totalBacking, stablecoinDecimals),
         );
-        const totalDistributed = parseFloat(formatEther(snapshot.totalDistributed));
+        const totalDistributed = parseFloat(
+          formatEther(snapshot.totalDistributed),
+        );
         const activeNFTs = Number(snapshot.activeNFTs);
 
         // Calculate floor price - if no tokens distributed yet, calculate theoretical price
@@ -260,7 +270,9 @@ export function useVaultHistory(snapshotCount: number = 30) {
 
         return {
           timestamp: Number(snapshot.timestamp) * 1000,
-          date: new Date(Number(snapshot.timestamp) * 1000).toLocaleDateString(),
+          date: new Date(
+            Number(snapshot.timestamp) * 1000,
+          ).toLocaleDateString(),
           totalBacking,
           totalDistributed,
           floorPrice,
@@ -331,13 +343,28 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     // getNFTInfo: [tokenBalance, pendingTokens, totalEarned, totalClaimed, totalRedeemed, liquidityValue, isActive]
     const info =
       infoResult?.status === "success"
-        ? (infoResult.result as [bigint, bigint, bigint, bigint, bigint, bigint, boolean])
+        ? (infoResult.result as [
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            boolean,
+          ])
         : undefined;
 
     // nftBalances: [tokenBalance, totalEarned, totalClaimed, totalRedeemed, lastDistributionTime, isActive]
     const balData =
       balResult?.status === "success"
-        ? (balResult.result as [bigint, bigint, bigint, bigint, bigint, boolean])
+        ? (balResult.result as [
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            bigint,
+            boolean,
+          ])
         : undefined;
 
     const lastDistributionTime = balData ? Number(balData[4]) : 0;
