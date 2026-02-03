@@ -79,7 +79,7 @@ export const MyTokens: React.FC = () => {
   const handleMaxRedeem = () => {
     if (redeemMode === "fromNFT" && selectedNFT !== null) {
       const nft = nftRewards.nfts.find((n) => n.tokenId === selectedNFT);
-      if (nft) setRedeemAmount(nft.tokenBalance);
+      if (nft) setRedeemAmount(nft.displayBalance);
     } else if (redeemMode === "fromWallet") {
       setRedeemAmount(tokenBalance);
     }
@@ -223,11 +223,8 @@ export const MyTokens: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-gray-300">
-                          {parseFloat(nft.tokenBalance).toFixed(2)}
-                        </span>
-                        <span className="text-green-400 ml-2 text-xs">
-                          +{parseFloat(nft.pending).toFixed(4)}
+                        <span className="text-green-400 font-medium">
+                          {parseFloat(nft.displayBalance).toFixed(4)} tokens
                         </span>
                       </div>
                     </div>
@@ -417,8 +414,8 @@ export const MyTokens: React.FC = () => {
                   <option value="">Choose an NFT...</option>
                   {nftRewards.nfts.map((nft) => (
                     <option key={nft.tokenId} value={nft.tokenId}>
-                      #{nft.tokenId} — Balance:{" "}
-                      {parseFloat(nft.tokenBalance).toFixed(4)}
+                      #{nft.tokenId} — Accrued:{" "}
+                      {parseFloat(nft.displayBalance).toFixed(4)} tokens
                     </option>
                   ))}
                 </select>

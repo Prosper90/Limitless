@@ -148,22 +148,6 @@ export function useGenesisVault() {
   //const totalDistributedValue = stats ? parseFloat(formatEther(stats[1])) : 0;
   const activeNFTsValue = stats ? Number(stats[6]) : 0;
 
-  // Debug logging - remove after fixing
-  console.log("useGenesisVault Debug:", {
-    stablecoinDecimals,
-    statsRaw: stats
-      ? {
-          backing: stats[0]?.toString(),
-          distributed: stats[1]?.toString(),
-          activeNFTs: stats[6]?.toString(),
-          floorPriceFromStats: stats[5]?.toString(),
-        }
-      : "no stats",
-    floorPriceRaw: floorPriceRaw?.toString(),
-    totalBackingValue,
-    activeNFTsValue,
-  });
-
   // Calculate floor price
   // Actual floor price from contract (if tokens have been distributed)
   let floorPriceValue = 0;
@@ -181,7 +165,6 @@ export function useGenesisVault() {
     floorPriceValue = totalBackingValue / activeNFTsValue;
   }
 
-  console.log("Floor price calculated:", floorPriceValue);
 
   return {
     // USDC-denominated values — use stablecoin decimals
@@ -223,19 +206,6 @@ export function useVaultHistory(snapshotCount: number = 30) {
     args: [BigInt(snapshotCount)],
   });
 
-  // Debug logging for snapshots
-  console.log("useVaultHistory Debug:", {
-    stablecoinDecimals,
-    historyLength: historyLength?.toString(),
-    snapshotsRaw: snapshots
-      ? (snapshots as Array<any>).map((s) => ({
-          backing: s.totalBacking?.toString(),
-          floorPrice: s.floorPrice?.toString(),
-          activeNFTs: s.activeNFTs?.toString(),
-        }))
-      : "no snapshots",
-  });
-
   const chartData = snapshots
     ? (
         snapshots as Array<{
@@ -265,8 +235,6 @@ export function useVaultHistory(snapshotCount: number = 30) {
         if (floorPrice === 0 && totalBacking > 0 && activeNFTs > 0) {
           floorPrice = totalBacking / activeNFTs;
         }
-
-        console.log("Chart point:", { totalBacking, floorPrice, activeNFTs });
 
         return {
           timestamp: Number(snapshot.timestamp) * 1000,
@@ -368,6 +336,25 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
         : undefined;
 
     const lastDistributionTime = balData ? Number(balData[4]) : 0;
+    const isActive = info ? info[6] : false;
+
+    // Calculate display balance: base 1 token + fractional progress for this NFT
+    // Each NFT earns 1 token per day, so we show: 1 (base) + sub-day fraction
+    let displayBalance = 0;
+    if (isActive) {
+      const baseReward = 1; // Each NFT starts with 1 token (daily reward)
+      const now = Math.floor(Date.now() / 1000);
+
+      if (lastDistributionTime > 0) {
+        const elapsed = now - lastDistributionTime;
+        const subDaySeconds = elapsed % 86400;
+        const fractionalProgress = subDaySeconds / 86400;
+        displayBalance = baseReward + fractionalProgress;
+      } else {
+        // Just registered, show base only
+        displayBalance = baseReward;
+      }
+    }
 
     return {
       tokenId: Number(tokenId),
@@ -379,8 +366,10 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
       totalClaimed: info ? formatEther(info[3]) : "0",
       totalRedeemed: info ? formatEther(info[4]) : "0",
       liquidityValue: info ? formatUnits(info[5], stablecoinDecimals) : "0",
-      isActive: info ? info[6] : false,
+      isActive,
       lastDistributionTime,
+      // Display balance = base 1 token + fractional progress (what user sees as "accrued")
+      displayBalance: displayBalance.toFixed(6),
     };
   });
 
