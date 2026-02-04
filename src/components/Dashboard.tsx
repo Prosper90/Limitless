@@ -71,6 +71,16 @@ export const Dashboard: React.FC = () => {
     return n.toFixed(2);
   };
 
+  // Format token counts as whole numbers (no decimals)
+  const formatTokenCount = (num: string) => {
+    const n = parseFloat(num);
+    if (n >= 1e12) return (n / 1e12).toFixed(0) + "T";
+    if (n >= 1e9) return (n / 1e9).toFixed(0) + "B";
+    if (n >= 1e6) return (n / 1e6).toFixed(0) + "M";
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + "K";
+    return Math.floor(n).toString();
+  };
+
   const formatUSD = (num: string) => {
     return "$" + formatNumber(num);
   };
@@ -320,7 +330,7 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Total Distributed"
-            value={formatNumber(totalDistributed)}
+            value={formatTokenCount(totalDistributed)}
             subtitle="Tokens distributed to NFTs"
           />
           <StatCard

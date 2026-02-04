@@ -137,7 +137,7 @@ export function useGenesisVault() {
   });
 
   // Stats: [backing, distributed, claimed, redeemed, redeemedUSDC, floorPrice, activeNFTs, vaultTokenBalance, dailyReward]
-  // Note: 'distributed' now returns real-time accrued tokens from contract
+  // Note: 'distributed' returns real-time accrued tokens from contract
   const stats = vaultStats as
     | [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
@@ -146,6 +146,14 @@ export function useGenesisVault() {
   const totalBackingValue = stats
     ? parseFloat(formatUnits(stats[0], stablecoinDecimals))
     : 0;
+
+  // Get raw accrued value and active NFTs
+  const rawAccrued = stats ? parseFloat(formatEther(stats[1])) : 0;
+  const activeNFTsCount = stats ? Number(stats[6]) : 0;
+
+  // Calculate effective distributed: activeNFTs (base) + rawAccrued (time-based)
+  // Show whole tokens only - tokens appear after complete 24-hour periods
+  const effectiveDistributed = activeNFTsCount + Math.floor(rawAccrued);
 
   // Floor price now calculated by contract using real-time accrued tokens
   // No need for theoretical calculation - contract handles it
@@ -164,11 +172,11 @@ export function useGenesisVault() {
     totalRedeemedUSDC: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
     floorPrice: floorPriceValue.toString(),
     // Token-denominated values — always 18 decimals
-    // totalDistributed now returns real-time accrued tokens from contract
-    totalDistributed: stats ? formatEther(stats[1]) : "0",
+    // totalDistributed uses effective value: max(accrued, activeNFTs) to match floor price logic
+    totalDistributed: effectiveDistributed.toString(),
     totalClaimed: stats ? formatEther(stats[2]) : "0",
     totalRedeemed: stats ? formatEther(stats[3]) : "0",
-    activeNFTs: stats ? Number(stats[6]).toString() : "0",
+    activeNFTs: activeNFTsCount.toString(),
     vaultTokenBalance: stats ? formatEther(stats[7]) : "0",
     dailyReward: stats ? formatEther(stats[8]) : "0",
     minRedemption: minRedemptionRaw
@@ -199,6 +207,40 @@ export function useVaultHistory(snapshotCount: number = 30) {
     args: [BigInt(snapshotCount)],
   });
 
+  // Get live floor price to use for the most recent data point
+  // (Snapshots may have stale floor price since they're taken before NFT registration)
+  const { data: liveFloorPrice } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "getFloorPrice",
+  });
+
+  // Get live total accrued tokens
+  const { data: liveTotalAccrued } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "getTotalAccruedTokens",
+  });
+
+  // Get live total backing
+  const { data: liveTotalBacking } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "totalBackingUSDT",
+  });
+
+  const liveFloorPriceValue = liveFloorPrice
+    ? parseFloat(formatUnits(liveFloorPrice as bigint, stablecoinDecimals))
+    : 0;
+
+  const liveTotalAccruedValue = liveTotalAccrued
+    ? parseFloat(formatEther(liveTotalAccrued as bigint))
+    : 0;
+
+  const liveTotalBackingValue = liveTotalBacking
+    ? parseFloat(formatUnits(liveTotalBacking as bigint, stablecoinDecimals))
+    : 0;
+
   const chartData = snapshots
     ? (
         snapshots as Array<{
@@ -208,7 +250,7 @@ export function useVaultHistory(snapshotCount: number = 30) {
           floorPrice: bigint;
           activeNFTs: bigint;
         }>
-      ).map((snapshot) => {
+      ).map((snapshot, index, arr) => {
         const totalBacking = parseFloat(
           formatUnits(snapshot.totalBacking, stablecoinDecimals),
         );
@@ -217,19 +259,33 @@ export function useVaultHistory(snapshotCount: number = 30) {
         );
         const activeNFTs = Number(snapshot.activeNFTs);
 
-        // Floor price now calculated by contract using real-time accrued tokens
-        // No need for theoretical calculation - snapshots contain accurate floor prices
-        const floorPrice = parseFloat(
-          formatUnits(snapshot.floorPrice, stablecoinDecimals),
-        );
+        // For the most recent snapshot, use live values if snapshot values are 0
+        // This handles the case where snapshot is taken before NFT registration
+        const isLastSnapshot = index === arr.length - 1;
+
+        // Recalculate floor price from backing/activeNFTs to avoid snapshot timing issue
+        // (Snapshots are taken before NFT registration, causing incorrect floor price)
+        let floorPrice = 0;
+        if (activeNFTs > 0) {
+          // Floor price = backing / activeNFTs (each NFT represents 1 token minimum)
+          floorPrice = totalBacking / activeNFTs;
+        } else if (isLastSnapshot && liveFloorPriceValue > 0) {
+          // Fallback to live floor price for latest snapshot if no NFTs in snapshot
+          floorPrice = liveFloorPriceValue;
+        }
+
+        // Calculate effective distributed: activeNFTs (base) + accrued (time-based)
+        // This matches the frontend display where each NFT shows "1 base + fractional accrual"
+        const effectiveTotalDistributed = activeNFTs + totalDistributed;
+        const effectiveLiveDistributed = activeNFTs + liveTotalAccruedValue;
 
         return {
           timestamp: Number(snapshot.timestamp) * 1000,
           date: new Date(
             Number(snapshot.timestamp) * 1000,
           ).toLocaleDateString(),
-          totalBacking,
-          totalDistributed,
+          totalBacking: isLastSnapshot && totalBacking === 0 ? liveTotalBackingValue : totalBacking,
+          totalDistributed: isLastSnapshot && effectiveTotalDistributed === 0 ? effectiveLiveDistributed : effectiveTotalDistributed,
           floorPrice,
           activeNFTs,
         };
@@ -334,22 +390,13 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     const lastDistributionTime = balData ? Number(balData[4]) : 0;
     const isActive = info ? info[6] : false;
 
-    // Calculate display balance: base 1 token + fractional progress for this NFT
-    // Each NFT earns 1 token per day, so we show: 1 (base) + sub-day fraction
+    // Display balance: whole tokens only (base 1 + completed 24-hour cycles)
+    // No fractional progress - tokens only appear after full 24 hours
     let displayBalance = 0;
     if (isActive) {
-      const baseReward = 1; // Each NFT starts with 1 token (daily reward)
-      const now = Math.floor(Date.now() / 1000);
-
-      if (lastDistributionTime > 0) {
-        const elapsed = now - lastDistributionTime;
-        const subDaySeconds = elapsed % 86400;
-        const fractionalProgress = subDaySeconds / 86400;
-        displayBalance = baseReward + fractionalProgress;
-      } else {
-        // Just registered, show base only
-        displayBalance = baseReward;
-      }
+      const baseReward = 1; // Each NFT has 1 base token
+      const pendingTokens = info ? parseFloat(formatEther(info[1])) : 0; // Whole tokens from contract
+      displayBalance = baseReward + pendingTokens;
     }
 
     return {
@@ -364,8 +411,8 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
       liquidityValue: info ? formatUnits(info[5], stablecoinDecimals) : "0",
       isActive,
       lastDistributionTime,
-      // Display balance = base 1 token + fractional progress (what user sees as "accrued")
-      displayBalance: displayBalance.toFixed(6),
+      // Display balance = whole tokens only (base + completed days)
+      displayBalance: Math.floor(displayBalance).toString(),
     };
   });
 
@@ -386,63 +433,16 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     : 0;
   const totalAvailable = totalTokenBalance + totalPending + walletBal + bonusBalance;
 
-  // Real-time sub-day ticker: compute fractional pending from lastDistributionTime
+  // Calculate whole tokens only: base (1 per NFT) + pending (whole tokens from contract)
+  // No fractional display - tokens only appear after complete 24-hour periods
   const nftCount = nfts.filter((n) => n.isActive).length;
 
-  // Calculate realtime accrued tokens based on elapsed time
-  // Each NFT earns 1 token per day, starting from 1 (base daily reward)
-  // So accrued = nftCount * 1 (base) + fractional progress toward next token
-  const computeRealtimeAccrued = useCallback(() => {
-    if (nftCount === 0) return 0;
-    const now = Math.floor(Date.now() / 1000);
-    let totalAccrued = 0;
-
-    for (const nft of nfts) {
-      if (!nft.isActive) continue;
-
-      // Base: 1 token per NFT (the daily reward you're earning)
-      const baseReward = 1;
-
-      // If lastDistributionTime is 0, NFT just registered - show base only
-      if (nft.lastDistributionTime === 0) {
-        totalAccrued += baseReward;
-        continue;
-      }
-
-      const elapsed = now - nft.lastDistributionTime;
-      // Fractional progress within current day cycle
-      const subDaySeconds = elapsed % 86400;
-      const fractionalProgress = subDaySeconds / 86400;
-
-      // Total for this NFT = base (1) + fractional progress toward next token
-      totalAccrued += baseReward + fractionalProgress;
-    }
-    return totalAccrued;
-  }, [nfts, nftCount]);
-
-  // Initialize and tick the realtime accrued display
-  // This shows: base (1 per NFT) + fractional progress + any contract pending
+  // Whole tokens = nftCount (base, 1 per active NFT) + totalPending (completed 24h cycles)
+  // This updates when contract data refreshes (every 30 seconds or on user action)
   useEffect(() => {
-    const realtimeAccrued = computeRealtimeAccrued();
-    // Add contract pending (full days already credited but not claimed)
-    setRealtimePending((totalPending + realtimeAccrued).toFixed(6));
-  }, [totalPending, computeRealtimeAccrued]);
-
-  useEffect(() => {
-    if (nftCount === 0) {
-      setRealtimePending("0");
-      return;
-    }
-    // Each NFT earns 1 token per day = 1/86400 tokens per second
-    const perSecond = nftCount / 86400;
-    const interval = setInterval(() => {
-      setRealtimePending((prev) => {
-        const current = parseFloat(prev);
-        return (current + perSecond).toFixed(6);
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [nftCount]);
+    const wholeTokens = nftCount + Math.floor(totalPending);
+    setRealtimePending(wholeTokens.toString());
+  }, [nftCount, totalPending]);
 
   // Auto-refresh contract data every 30 seconds
   useEffect(() => {
@@ -468,11 +468,11 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
 
   return {
     nfts,
-    totalTokenBalance: totalTokenBalance.toFixed(6),
-    totalPending: totalPending.toFixed(6),
-    totalAvailable: totalAvailable.toFixed(6),
+    totalTokenBalance: Math.floor(totalTokenBalance).toString(),
+    totalPending: Math.floor(totalPending).toString(),
+    totalAvailable: Math.floor(totalAvailable).toString(),
     realtimePending,
-    bonusBalance: bonusBalance.toFixed(6),
+    bonusBalance: Math.floor(bonusBalance).toString(),
     distribute,
     isPending,
     isConfirming,

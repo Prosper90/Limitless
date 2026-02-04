@@ -165,29 +165,29 @@ export const MyTokens: React.FC = () => {
               </div>
             </div>
             <div className="text-4xl font-bold gradient-text mb-1">
-              {totalAvailable.toFixed(4)}
+              {Math.floor(totalAvailable)}
             </div>
             <p className="text-gray-400 text-sm">LIMITLESS tokens</p>
             <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Wallet Balance</span>
-                <span className="font-medium">{walletBal.toFixed(4)}</span>
+                <span className="font-medium">{Math.floor(walletBal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">NFT Token Balances</span>
-                <span className="font-medium">{nftTokenTotal.toFixed(4)}</span>
+                <span className="font-medium">{Math.floor(nftTokenTotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Pending Rewards</span>
                 <span className="font-medium text-green-400">
-                  +{parseFloat(nftRewards.realtimePending).toFixed(4)}
+                  +{nftRewards.realtimePending}
                 </span>
               </div>
               {bonusBalance > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Referral Bonus</span>
                   <span className="font-medium text-purple-400">
-                    {bonusBalance.toFixed(4)}
+                    {Math.floor(bonusBalance)}
                   </span>
                 </div>
               )}
@@ -248,7 +248,7 @@ export const MyTokens: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <span className="text-green-400 font-medium">
-                          {parseFloat(nft.displayBalance).toFixed(4)} tokens
+                          {Math.floor(parseFloat(nft.displayBalance))} tokens
                         </span>
                       </div>
                     </div>
@@ -301,7 +301,7 @@ export const MyTokens: React.FC = () => {
                 {nftRewards.nfts.map((nft) => (
                   <option key={nft.tokenId} value={nft.tokenId}>
                     #{nft.tokenId} — Balance:{" "}
-                    {parseFloat(nft.tokenBalance).toFixed(4)}
+                    {Math.floor(parseFloat(nft.tokenBalance))}
                   </option>
                 ))}
               </select>
@@ -451,7 +451,7 @@ export const MyTokens: React.FC = () => {
                   {nftRewards.nfts.map((nft) => (
                     <option key={nft.tokenId} value={nft.tokenId}>
                       #{nft.tokenId} — Accrued:{" "}
-                      {parseFloat(nft.displayBalance).toFixed(4)} tokens
+                      {Math.floor(parseFloat(nft.displayBalance))} tokens
                     </option>
                   ))}
                 </select>
@@ -464,7 +464,7 @@ export const MyTokens: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Available Bonus Balance</span>
                   <span className="font-bold text-purple-400">
-                    {bonusBalance.toFixed(4)} tokens
+                    {Math.floor(bonusBalance)} tokens
                   </span>
                 </div>
                 <p className="text-gray-500 text-xs mt-2">
@@ -496,7 +496,7 @@ export const MyTokens: React.FC = () => {
               <p className="text-gray-500 text-xs mt-2">
                 Minimum: {minRedemption} tokens
                 {redeemMode === "fromWallet" &&
-                  ` | Wallet: ${walletBal.toFixed(4)} tokens`}
+                  ` | Wallet: ${Math.floor(walletBal)} tokens`}
               </p>
             </div>
 
