@@ -137,6 +137,7 @@ export function useGenesisVault() {
   });
 
   // Stats: [backing, distributed, claimed, redeemed, redeemedUSDC, floorPrice, activeNFTs, vaultTokenBalance, dailyReward]
+  // Note: 'distributed' now returns real-time accrued tokens from contract
   const stats = vaultStats as
     | [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
@@ -145,11 +146,9 @@ export function useGenesisVault() {
   const totalBackingValue = stats
     ? parseFloat(formatUnits(stats[0], stablecoinDecimals))
     : 0;
-  //const totalDistributedValue = stats ? parseFloat(formatEther(stats[1])) : 0;
-  const activeNFTsValue = stats ? Number(stats[6]) : 0;
 
-  // Calculate floor price
-  // Actual floor price from contract (if tokens have been distributed)
+  // Floor price now calculated by contract using real-time accrued tokens
+  // No need for theoretical calculation - contract handles it
   let floorPriceValue = 0;
   if (floorPriceRaw) {
     floorPriceValue = parseFloat(
@@ -159,19 +158,13 @@ export function useGenesisVault() {
     floorPriceValue = parseFloat(formatUnits(stats[5], stablecoinDecimals));
   }
 
-  // If actual floor price is 0 but we have backing and NFTs, calculate theoretical
-  // Theoretical = totalBacking / activeNFTs (since each NFT earns 1 token/day)
-  if (floorPriceValue === 0 && totalBackingValue > 0 && activeNFTsValue > 0) {
-    floorPriceValue = totalBackingValue / activeNFTsValue;
-  }
-
-
   return {
     // USDC-denominated values — use stablecoin decimals
     totalBacking: totalBackingValue.toString(),
     totalRedeemedUSDC: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
     floorPrice: floorPriceValue.toString(),
     // Token-denominated values — always 18 decimals
+    // totalDistributed now returns real-time accrued tokens from contract
     totalDistributed: stats ? formatEther(stats[1]) : "0",
     totalClaimed: stats ? formatEther(stats[2]) : "0",
     totalRedeemed: stats ? formatEther(stats[3]) : "0",
@@ -224,17 +217,11 @@ export function useVaultHistory(snapshotCount: number = 30) {
         );
         const activeNFTs = Number(snapshot.activeNFTs);
 
-        // Calculate floor price - if no tokens distributed yet, calculate theoretical price
-        // Theoretical = totalBacking / activeNFTs (backing per NFT, which equals price per token after 1 day)
-        let floorPrice = parseFloat(
+        // Floor price now calculated by contract using real-time accrued tokens
+        // No need for theoretical calculation - snapshots contain accurate floor prices
+        const floorPrice = parseFloat(
           formatUnits(snapshot.floorPrice, stablecoinDecimals),
         );
-
-        // If floor price is 0 but we have backing and NFTs, calculate theoretical floor price
-        // Each NFT earns 1 token/day, so after 1 day: floorPrice = totalBacking / totalNFTs
-        if (floorPrice === 0 && totalBacking > 0 && activeNFTs > 0) {
-          floorPrice = totalBacking / activeNFTs;
-        }
 
         return {
           timestamp: Number(snapshot.timestamp) * 1000,
@@ -267,6 +254,14 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
   });
 
   const [realtimePending, setRealtimePending] = useState("0");
+
+  // Read user's bonus balance (from referral rewards)
+  const { data: bonusBalanceRaw, refetch: refetchBonus } = useReadContract({
+    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+    abi: GENESIS_VAULT_ABI,
+    functionName: "userBonusBalance",
+    args: address ? [address] : undefined,
+  });
 
   // getNFTInfo returns 7 fields: tokenBalance, pendingTokens, totalEarned, totalClaimed, totalRedeemed, liquidityValue, isActive
   const nftInfoContracts = (tokenIds || []).map((tokenId) => ({
@@ -322,10 +317,11 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
           ])
         : undefined;
 
-    // nftBalances: [tokenBalance, totalEarned, totalClaimed, totalRedeemed, lastDistributionTime, isActive]
+    // nftBalances: [tokenBalance, totalEarned, totalClaimed, totalRedeemed, lastDistributionTime, registrationTime, isActive]
     const balData =
       balResult?.status === "success"
         ? (balResult.result as [
+            bigint,
             bigint,
             bigint,
             bigint,
@@ -385,7 +381,10 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
   const walletBal = walletBalance
     ? parseFloat(formatEther(walletBalance as bigint))
     : 0;
-  const totalAvailable = totalTokenBalance + totalPending + walletBal;
+  const bonusBalance = bonusBalanceRaw
+    ? parseFloat(formatEther(bonusBalanceRaw as bigint))
+    : 0;
+  const totalAvailable = totalTokenBalance + totalPending + walletBal + bonusBalance;
 
   // Real-time sub-day ticker: compute fractional pending from lastDistributionTime
   const nftCount = nfts.filter((n) => n.isActive).length;
@@ -464,8 +463,8 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
   };
 
   const refetch = useCallback(async () => {
-    await Promise.all([refetchInfo(), refetchBalances()]);
-  }, [refetchInfo, refetchBalances]);
+    await Promise.all([refetchInfo(), refetchBalances(), refetchBonus()]);
+  }, [refetchInfo, refetchBalances, refetchBonus]);
 
   return {
     nfts,
@@ -473,12 +472,14 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     totalPending: totalPending.toFixed(6),
     totalAvailable: totalAvailable.toFixed(6),
     realtimePending,
+    bonusBalance: bonusBalance.toFixed(6),
     distribute,
     isPending,
     isConfirming,
     isSuccess,
     error,
     refetch,
+    refetchBonus,
   };
 }
 
@@ -508,6 +509,13 @@ export function useVaultActions() {
   } = useWriteContract();
 
   const {
+    writeContract: writeRedeemBonusContract,
+    data: redeemBonusHash,
+    isPending: isRedeemBonusPending,
+    error: redeemBonusError,
+  } = useWriteContract();
+
+  const {
     writeContract: writeApproveContract,
     data: approveHash,
     isPending: isApprovePending,
@@ -523,6 +531,11 @@ export function useVaultActions() {
     isLoading: isRedeemWalletConfirming,
     isSuccess: isRedeemWalletSuccess,
   } = useWaitForTransactionReceipt({ hash: redeemWalletHash });
+
+  const {
+    isLoading: isRedeemBonusConfirming,
+    isSuccess: isRedeemBonusSuccess,
+  } = useWaitForTransactionReceipt({ hash: redeemBonusHash });
 
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } =
     useWaitForTransactionReceipt({ hash: approveHash });
@@ -577,24 +590,37 @@ export function useVaultActions() {
     });
   };
 
+  const redeemFromBonus = async (amount: string) => {
+    const amountWei = parseEther(amount);
+    writeRedeemBonusContract({
+      address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
+      abi: GENESIS_VAULT_ABI,
+      functionName: "redeemFromBonus",
+      args: [amountWei],
+    });
+  };
+
   const isPending =
     isClaimPending ||
     isRedeemNFTPending ||
     isRedeemWalletPending ||
+    isRedeemBonusPending ||
     isApprovePending;
   const isConfirming =
     isClaimConfirming ||
     isRedeemNFTConfirming ||
     isRedeemWalletConfirming ||
+    isRedeemBonusConfirming ||
     isApproveConfirming;
   const isSuccess =
-    isClaimSuccess || isRedeemNFTSuccess || isRedeemWalletSuccess;
-  const combinedError = claimError || redeemNFTError || redeemWalletError;
+    isClaimSuccess || isRedeemNFTSuccess || isRedeemWalletSuccess || isRedeemBonusSuccess;
+  const combinedError = claimError || redeemNFTError || redeemWalletError || redeemBonusError;
 
   return {
     claimTokens,
     redeemFromNFT,
     redeemFromWallet,
+    redeemFromBonus,
     approveTokenForVault,
     tokenAllowance: tokenAllowance
       ? formatEther(tokenAllowance as bigint)
@@ -609,6 +635,7 @@ export function useVaultActions() {
     isClaimSuccess,
     isRedeemNFTSuccess,
     isRedeemWalletSuccess,
+    isRedeemBonusSuccess,
     error: combinedError,
   };
 }

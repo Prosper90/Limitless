@@ -7,7 +7,7 @@ import {
   useVaultActions,
 } from "../hooks/useLimitless";
 
-type RedeemMode = "fromNFT" | "fromWallet";
+type RedeemMode = "fromNFT" | "fromWallet" | "fromBonus";
 
 export const MyTokens: React.FC = () => {
   const [redeemAmount, setRedeemAmount] = useState("");
@@ -24,6 +24,7 @@ export const MyTokens: React.FC = () => {
     //claimTokens,
     redeemFromNFT,
     redeemFromWallet,
+    redeemFromBonus,
     approveTokenForVault,
     tokenAllowance,
     refetchAllowance,
@@ -31,14 +32,16 @@ export const MyTokens: React.FC = () => {
     isConfirming: isActionConfirming,
     isSuccess: actionSuccess,
     isApproveSuccess,
+    isRedeemBonusSuccess,
     error: actionError,
   } = useVaultActions();
 
-  // Total available = wallet + all NFT balances + all pending
+  // Total available = wallet + all NFT balances + all pending + bonus
   const walletBal = parseFloat(tokenBalance);
   const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
   const pendingTotal = parseFloat(nftRewards.realtimePending);
-  const totalAvailable = walletBal + nftTokenTotal + pendingTotal;
+  const bonusBalance = parseFloat(nftRewards.bonusBalance);
+  const totalAvailable = walletBal + nftTokenTotal + pendingTotal + bonusBalance;
 
   const handleRedeem = async () => {
     if (!redeemAmount || parseFloat(redeemAmount) <= 0) return;
@@ -46,6 +49,8 @@ export const MyTokens: React.FC = () => {
     if (redeemMode === "fromNFT") {
       if (selectedNFT === null) return;
       await redeemFromNFT(BigInt(selectedNFT), redeemAmount);
+    } else if (redeemMode === "fromBonus") {
+      await redeemFromBonus(redeemAmount);
     } else {
       // Check allowance for wallet redemption
       if (parseFloat(tokenAllowance) < parseFloat(redeemAmount)) {
@@ -76,12 +81,22 @@ export const MyTokens: React.FC = () => {
     }
   }, [isApproveSuccess, refetchAllowance]);
 
+  // Refetch bonus balance after successful bonus redemption
+  React.useEffect(() => {
+    if (isRedeemBonusSuccess) {
+      const timer = setTimeout(() => nftRewards.refetchBonus(), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isRedeemBonusSuccess, nftRewards]);
+
   const handleMaxRedeem = () => {
     if (redeemMode === "fromNFT" && selectedNFT !== null) {
       const nft = nftRewards.nfts.find((n) => n.tokenId === selectedNFT);
       if (nft) setRedeemAmount(nft.displayBalance);
     } else if (redeemMode === "fromWallet") {
       setRedeemAmount(tokenBalance);
+    } else if (redeemMode === "fromBonus") {
+      setRedeemAmount(nftRewards.bonusBalance);
     }
   };
 
@@ -104,7 +119,8 @@ export const MyTokens: React.FC = () => {
   const canRedeem =
     parseFloat(redeemAmount) >= parseFloat(minRedemption) &&
     ((redeemMode === "fromNFT" && selectedNFT !== null) ||
-      redeemMode === "fromWallet");
+      redeemMode === "fromWallet" ||
+      (redeemMode === "fromBonus" && parseFloat(redeemAmount) <= bonusBalance));
 
   const needsApproval =
     redeemMode === "fromWallet" &&
@@ -167,6 +183,14 @@ export const MyTokens: React.FC = () => {
                   +{parseFloat(nftRewards.realtimePending).toFixed(4)}
                 </span>
               </div>
+              {bonusBalance > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Referral Bonus</span>
+                  <span className="font-medium text-purple-400">
+                    {bonusBalance.toFixed(4)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-sm border-t border-white/10 pt-3">
                 <span className="text-gray-400">Total Value</span>
                 <span className="font-bold text-green-400">
@@ -382,8 +406,20 @@ export const MyTokens: React.FC = () => {
                     : "bg-white/5 text-gray-400 hover:bg-white/10"
                 }`}
               >
-                Redeem from NFT
+                From NFT
               </button>
+              {bonusBalance > 0 && (
+                <button
+                  onClick={() => setRedeemMode("fromBonus")}
+                  className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+                    redeemMode === "fromBonus"
+                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                      : "bg-white/5 text-gray-400 hover:bg-white/10"
+                  }`}
+                >
+                  From Bonus
+                </button>
+              )}
               {/* <button
                 onClick={() => setRedeemMode("fromWallet")}
                 className={`flex-1 py-3 rounded-xl font-medium transition-all ${
@@ -392,7 +428,7 @@ export const MyTokens: React.FC = () => {
                     : "bg-white/5 text-gray-400 hover:bg-white/10"
                 }`}
               >
-                Redeem from Wallet
+                From Wallet
               </button> */}
             </div>
 
@@ -419,6 +455,21 @@ export const MyTokens: React.FC = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* Bonus balance info (only for fromBonus) */}
+            {redeemMode === "fromBonus" && (
+              <div className="p-4 bg-purple-600/10 border border-purple-600/30 rounded-xl">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Available Bonus Balance</span>
+                  <span className="font-bold text-purple-400">
+                    {bonusBalance.toFixed(4)} tokens
+                  </span>
+                </div>
+                <p className="text-gray-500 text-xs mt-2">
+                  Bonus tokens earned from referral milestones
+                </p>
               </div>
             )}
 

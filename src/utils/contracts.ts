@@ -272,6 +272,7 @@ export const GENESIS_VAULT_ABI = [
       { name: "totalClaimed", type: "uint256" },
       { name: "totalRedeemed", type: "uint256" },
       { name: "lastDistributionTime", type: "uint256" },
+      { name: "registrationTime", type: "uint256" },
       { name: "isActive", type: "bool" },
     ],
     stateMutability: "view",
@@ -357,6 +358,55 @@ export const GENESIS_VAULT_ABI = [
     outputs: [{ type: "uint256" }],
     stateMutability: "view",
   },
+  // Accrual-based system functions
+  {
+    type: "function",
+    name: "getTotalAccruedTokens",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "userBonusBalance",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "totalBonusAwarded",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "sumOfRegistrationTimes",
+    inputs: [],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getUserTotalAccrued",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "tokenIds", type: "uint256[]" },
+    ],
+    outputs: [{ type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getBonusStats",
+    inputs: [],
+    outputs: [
+      { name: "totalBonus", type: "uint256" },
+      { name: "sumRegistrationTimes", type: "uint256" },
+    ],
+    stateMutability: "view",
+  },
   // Write functions
   {
     type: "function",
@@ -396,6 +446,13 @@ export const GENESIS_VAULT_ABI = [
     type: "function",
     name: "redeemFromWallet",
     inputs: [{ name: "amount", type: "uint256" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "redeemFromBonus",
+    inputs: [{ name: "tokenAmount", type: "uint256" }],
     outputs: [],
     stateMutability: "nonpayable",
   },
@@ -442,6 +499,24 @@ export const GENESIS_VAULT_ABI = [
     inputs: [
       { name: "amount", type: "uint256", indexed: false },
       { name: "newTotal", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "BonusTokensAwarded",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "BonusTokensRedeemed",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "tokenAmount", type: "uint256", indexed: false },
+      { name: "usdtReceived", type: "uint256", indexed: false },
+      { name: "floorPrice", type: "uint256", indexed: false },
     ],
   },
 ] as const;

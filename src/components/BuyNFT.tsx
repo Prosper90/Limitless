@@ -484,9 +484,9 @@ export const BuyNFT: React.FC = () => {
 
                   {/* 24-Hour Countdown */}
                   <div className="p-6 bg-white/5 border border-white/10 rounded-xl text-center">
-                    <h3 className="font-bold text-lg mb-2">First Distribution In</h3>
+                    <h3 className="font-bold text-lg mb-2">First Token In</h3>
                     <p className="text-gray-400 text-sm mb-4">
-                      Your first LIMITLESS token will be distributed in:
+                      Your first LIMITLESS token accrues in:
                     </p>
                     <div className="flex justify-center gap-4">
                       <div className="bg-white/10 rounded-xl p-4 min-w-[80px]">
