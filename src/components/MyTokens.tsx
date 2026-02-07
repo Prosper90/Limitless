@@ -6,6 +6,7 @@ import {
   useGenesisVault,
   useVaultActions,
 } from "../hooks/useLimitless";
+import { formatCurrency, formatFloorPrice } from "../utils/formatUtils";
 
 type RedeemMode = "fromNFT" | "fromWallet" | "fromBonus";
 
@@ -38,13 +39,21 @@ export const MyTokens: React.FC = () => {
 
   // Total available = wallet + all NFT balances + all pending + bonus
   const walletBal = parseFloat(tokenBalance);
-  const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
+  // const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
   const pendingTotal = parseFloat(nftRewards.realtimePending);
   const bonusBalance = parseFloat(nftRewards.bonusBalance);
-  const totalAvailable = walletBal + nftTokenTotal + pendingTotal + bonusBalance;
+  const totalAvailable = walletBal + pendingTotal + bonusBalance;
 
   const handleRedeem = async () => {
     if (!redeemAmount || parseFloat(redeemAmount) <= 0) return;
+
+    // Check floor price before redemption (must be > 0 to redeem)
+    if (floorPrice <= 0) {
+      alert(
+        "Redemption is not available because there is no floor price established yet.",
+      );
+      return;
+    }
 
     if (redeemMode === "fromNFT") {
       if (selectedNFT === null) return;
@@ -110,15 +119,23 @@ export const MyTokens: React.FC = () => {
   const estimatedRedemption = () => {
     if (!redeemAmount || parseFloat(redeemAmount) <= 0) return "0";
     const amount = parseFloat(redeemAmount);
-    const price = parseFloat(floorPrice);
-    return (amount * price).toFixed(6);
+    const estimatedValue = amount * floorPrice;
+    return formatFloorPrice(estimatedValue, "");
   };
 
   const isLoading = isActionPending || isActionConfirming;
 
+  const selectedNFTData =
+    redeemMode === "fromNFT" && selectedNFT !== null
+      ? nftRewards.nfts.find((n) => n.tokenId === selectedNFT)
+      : null;
+
   const canRedeem =
     parseFloat(redeemAmount) >= parseFloat(minRedemption) &&
-    ((redeemMode === "fromNFT" && selectedNFT !== null) ||
+    ((redeemMode === "fromNFT" &&
+      selectedNFT !== null &&
+      selectedNFTData != null &&
+      parseFloat(redeemAmount) <= parseFloat(selectedNFTData.displayBalance)) ||
       redeemMode === "fromWallet" ||
       (redeemMode === "fromBonus" && parseFloat(redeemAmount) <= bonusBalance));
 
@@ -165,36 +182,52 @@ export const MyTokens: React.FC = () => {
               </div>
             </div>
             <div className="text-4xl font-bold gradient-text mb-1">
-              {Math.floor(totalAvailable)}
+              {formatCurrency(totalAvailable, {
+                currencySymbol: "",
+                precision: 0,
+              })}
             </div>
             <p className="text-gray-400 text-sm">LIMITLESS tokens</p>
             <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Wallet Balance</span>
-                <span className="font-medium">{Math.floor(walletBal)}</span>
+                <span className="font-medium">
+                  {formatCurrency(walletBal, {
+                    currencySymbol: "",
+                    precision: 0,
+                  })}
+                </span>
               </div>
-              <div className="flex justify-between text-sm">
+              {/* <div className="flex justify-between text-sm">
                 <span className="text-gray-400">NFT Token Balances</span>
                 <span className="font-medium">{Math.floor(nftTokenTotal)}</span>
-              </div>
+              </div> */}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Pending Rewards</span>
                 <span className="font-medium text-green-400">
-                  +{nftRewards.realtimePending}
+                  +
+                  {formatCurrency(nftRewards.realtimePending, {
+                    currencySymbol: "",
+                    precision: 2,
+                    abbreviate: false,
+                  })}
                 </span>
               </div>
               {bonusBalance > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Referral Bonus</span>
                   <span className="font-medium text-purple-400">
-                    {Math.floor(bonusBalance)}
+                    {formatCurrency(bonusBalance, {
+                      currencySymbol: "",
+                      precision: 0,
+                    })}
                   </span>
                 </div>
               )}
               <div className="flex justify-between text-sm border-t border-white/10 pt-3">
                 <span className="text-gray-400">Total Value</span>
                 <span className="font-bold text-green-400">
-                  ${(totalAvailable * parseFloat(floorPrice)).toFixed(2)}
+                  {formatFloorPrice(totalAvailable * floorPrice)}
                 </span>
               </div>
             </div>
@@ -248,7 +281,11 @@ export const MyTokens: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <span className="text-green-400 font-medium">
-                          {Math.floor(parseFloat(nft.displayBalance))} tokens
+                          {formatCurrency(nft.displayBalance, {
+                            currencySymbol: "",
+                            precision: 0,
+                          })}{" "}
+                          tokens
                         </span>
                       </div>
                     </div>
@@ -301,7 +338,7 @@ export const MyTokens: React.FC = () => {
                 {nftRewards.nfts.map((nft) => (
                   <option key={nft.tokenId} value={nft.tokenId}>
                     #{nft.tokenId} — Balance:{" "}
-                    {Math.floor(parseFloat(nft.tokenBalance))}
+                    {formatCurrency(nft.tokenBalance, { currencySymbol: "", precision: 0 })}
                   </option>
                 ))}
               </select>
@@ -450,8 +487,12 @@ export const MyTokens: React.FC = () => {
                   <option value="">Choose an NFT...</option>
                   {nftRewards.nfts.map((nft) => (
                     <option key={nft.tokenId} value={nft.tokenId}>
-                      #{nft.tokenId} — Accrued:{" "}
-                      {Math.floor(parseFloat(nft.displayBalance))} tokens
+                      #{nft.tokenId} — Balance:{" "}
+                      {formatCurrency(nft.displayBalance, {
+                        currencySymbol: "",
+                        precision: 0,
+                      })}{" "}
+                      tokens
                     </option>
                   ))}
                 </select>
@@ -464,7 +505,11 @@ export const MyTokens: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Available Bonus Balance</span>
                   <span className="font-bold text-purple-400">
-                    {Math.floor(bonusBalance)} tokens
+                    {formatCurrency(bonusBalance, {
+                      currencySymbol: "",
+                      precision: 0,
+                    })}{" "}
+                    tokens
                   </span>
                 </div>
                 <p className="text-gray-500 text-xs mt-2">
@@ -496,7 +541,7 @@ export const MyTokens: React.FC = () => {
               <p className="text-gray-500 text-xs mt-2">
                 Minimum: {minRedemption} tokens
                 {redeemMode === "fromWallet" &&
-                  ` | Wallet: ${Math.floor(walletBal)} tokens`}
+                  ` | Wallet: ${formatCurrency(walletBal, { currencySymbol: "", precision: 0 })} tokens`}
               </p>
             </div>
 
@@ -521,7 +566,7 @@ export const MyTokens: React.FC = () => {
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Floor Price</span>
                   <span className="text-gray-400">
-                    1 LIMITLESS = ${parseFloat(floorPrice).toFixed(6)} USDC
+                    1 LIMITLESS = {formatFloorPrice(floorPrice, "")} USDC
                   </span>
                 </div>
                 <p className="text-gray-500 text-xs">
@@ -624,18 +669,18 @@ export const MyTokens: React.FC = () => {
             <div className="p-4 bg-white/5 rounded-xl">
               <p className="text-gray-400 text-sm mb-1">Total Vault Backing</p>
               <p className="text-2xl font-bold gradient-text">
-                ${parseFloat(totalBacking).toFixed(2)}
+                {formatCurrency(totalBacking, { precision: 2 })}
               </p>
             </div>
             <div className="p-4 bg-white/5 rounded-xl">
               <p className="text-gray-400 text-sm mb-1">Floor Price</p>
               <p className="text-2xl font-bold">
-                ${parseFloat(floorPrice).toFixed(6)}
+                {formatFloorPrice(floorPrice)}
               </p>
             </div>
           </div>
           <p className="text-gray-500 text-xs mt-4 text-center">
-            Floor price = Total Backing / Total Distributed Tokens
+            Floor price = Total Backing / Max Token Supply
           </p>
         </div>
       </div>

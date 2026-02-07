@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useGenesisVault, useLimitlessNFT } from "../hooks/useLimitless";
+import { formatFloorPrice } from "../utils/formatUtils";
 
 // Hero Section
 const HeroSection: React.FC = () => {
@@ -89,7 +90,7 @@ const StatsSection: React.FC = () => {
     },
     { value: totalMinted || "0", label: "NFTs Minted" },
     {
-      value: `$${parseFloat(floorPrice || "0").toFixed(4)}`,
+      value: formatFloorPrice(floorPrice || 0),
       label: "Floor Price",
     },
     {

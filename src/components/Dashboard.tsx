@@ -8,6 +8,7 @@ import {
   useLimitlessToken,
 } from "../hooks/useLimitless";
 import { TokenPriceChart } from "./TokenPriceChart";
+import { formatCurrency, formatFloorPrice } from "../utils/formatUtils";
 
 // Stat Card Component
 interface StatCardProps {
@@ -55,35 +56,12 @@ export const Dashboard: React.FC = () => {
   // Aggregate token balance: wallet + NFT balances
   // Total available = wallet + all NFT balances + all pending
   const walletBal = parseFloat(tokenBalance);
-  const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
+  // const nftTokenTotal = parseFloat(nftRewards.totalTokenBalance);
   const pendingTotal = parseFloat(nftRewards.realtimePending);
-  const totalTokenBalance = walletBal + nftTokenTotal + pendingTotal;
+  const bonusBalance = parseFloat(nftRewards.bonusBalance);
+  const totalTokenBalance = walletBal + pendingTotal + bonusBalance;
   // const totalTokenBalance =
   //   parseFloat(tokenBalance) + parseFloat(nftRewards.totalTokenBalance);
-
-  // Format large numbers
-  const formatNumber = (num: string) => {
-    const n = parseFloat(num);
-    if (n >= 1e12) return (n / 1e12).toFixed(2) + "T";
-    if (n >= 1e9) return (n / 1e9).toFixed(2) + "B";
-    if (n >= 1e6) return (n / 1e6).toFixed(2) + "M";
-    if (n >= 1e3) return (n / 1e3).toFixed(2) + "K";
-    return n.toFixed(2);
-  };
-
-  // Format token counts as whole numbers (no decimals)
-  const formatTokenCount = (num: string) => {
-    const n = parseFloat(num);
-    if (n >= 1e12) return (n / 1e12).toFixed(0) + "T";
-    if (n >= 1e9) return (n / 1e9).toFixed(0) + "B";
-    if (n >= 1e6) return (n / 1e6).toFixed(0) + "M";
-    if (n >= 1e3) return (n / 1e3).toFixed(0) + "K";
-    return Math.floor(n).toString();
-  };
-
-  const formatUSD = (num: string) => {
-    return "$" + formatNumber(num);
-  };
 
   return (
     <div className="container py-8">
@@ -164,7 +142,12 @@ export const Dashboard: React.FC = () => {
                 My Rewards
               </h3>
               <p className="text-gray-400 text-sm">
-                +{formatNumber(nftRewards.realtimePending)} accruing
+                +
+                {formatCurrency(nftRewards.realtimePending, {
+                  abbreviate: true,
+                  precision: 2,
+                })}{" "}
+                accruing
               </p>
             </div>
             <svg
@@ -253,7 +236,11 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Token Balance"
-            value={formatNumber(totalTokenBalance.toString())}
+            value={formatCurrency(totalTokenBalance, {
+              abbreviate: true,
+              currencySymbol: "",
+              precision: 0,
+            })}
             subtitle="Wallet + NFT balances"
             gradient={totalTokenBalance > 0}
             icon={
@@ -295,7 +282,10 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Referral Earnings"
-            value={formatUSD(totalEarned)}
+            value={formatCurrency(totalEarned, {
+              abbreviate: true,
+              precision: 2,
+            })}
             subtitle="Total commission"
             icon={
               <svg
@@ -330,18 +320,25 @@ export const Dashboard: React.FC = () => {
           />
           <StatCard
             title="Total Distributed"
-            value={formatTokenCount(totalDistributed)}
+            value={formatCurrency(totalDistributed, {
+              abbreviate: true,
+              currencySymbol: "",
+              precision: 0,
+            })}
             subtitle="Tokens distributed to NFTs"
           />
           <StatCard
             title="Total Vault Backing"
-            value={formatUSD(totalBacking)}
+            value={formatCurrency(totalBacking, {
+              abbreviate: true,
+              precision: 2,
+            })}
             subtitle="USDC backing the vault"
             gradient
           />
           <StatCard
             title="Floor Price"
-            value={formatUSD(floorPrice)}
+            value={formatFloorPrice(floorPrice)}
             subtitle="Guaranteed floor price"
           />
         </div>

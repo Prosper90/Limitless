@@ -11,7 +11,11 @@ export const BuyNFT: React.FC = () => {
   const [referrer, setReferrer] = useState("");
   const [step, setStep] = useState<"approve" | "mint">("approve");
   const [copied, setCopied] = useState(false);
-  const [countdown, setCountdown] = useState({ hours: 24, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState({
+    hours: 24,
+    minutes: 0,
+    seconds: 0,
+  });
 
   const {
     nftPrice,
@@ -40,7 +44,12 @@ export const BuyNFT: React.FC = () => {
   // } = useTokenBalance(CONTRACTS.STABLECOIN as `0x${string}`, address);
 
   // Debug logging
-  console.log("STABLECOIN Address:", CONTRACTS.STABLECOIN);
+  console.log(
+    "STABLECOIN Address:",
+    CONTRACTS.STABLECOIN,
+    nftPrice,
+    "checking NFT Price too",
+  );
   console.log("User Address:", address);
   // console.log("Balance from useTokenBalance:", balanceUSDT?.toString());
   // console.log("Balance from useStablecoin:", balance);
@@ -212,46 +221,102 @@ export const BuyNFT: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
                   <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-5 h-5 text-purple-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-white">1 Token Per Day, Forever</p>
-                    <p className="text-gray-400 text-sm">Earn 1 LIMITLESS token every 24 hours just by holding your NFT</p>
+                    <p className="font-bold text-white">
+                      1 Token Per Day, Forever
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      Earn 1 LIMITLESS token every 24 hours just by holding your
+                      NFT
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
                   <div className="w-10 h-10 rounded-lg bg-green-600/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <svg
+                      className="w-5 h-5 text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-white">Guaranteed Floor Price</p>
-                    <p className="text-gray-400 text-sm">Redeem your tokens anytime at the guaranteed floor price backed by the Genesis Vault</p>
+                    <p className="font-bold text-white">
+                      Guaranteed Floor Price
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      Redeem your tokens anytime at the guaranteed floor price
+                      backed by the Genesis Vault
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
                   <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-5 h-5 text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                   </div>
                   <div>
                     <p className="font-bold text-white">Referral Earnings</p>
-                    <p className="text-gray-400 text-sm">Earn up to $25 per sale across 6 levels by sharing your referral link</p>
+                    <p className="text-gray-400 text-sm">
+                      Earn up to $25 per sale across 6 levels by sharing your
+                      referral link
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl">
                   <div className="w-10 h-10 rounded-lg bg-orange-600/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-5 h-5 text-orange-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                   <div>
                     <p className="font-bold text-white">Lifetime Ownership</p>
-                    <p className="text-gray-400 text-sm">No staking, no locking, no expiry. Your NFT earns rewards as long as you hold it</p>
+                    <p className="text-gray-400 text-sm">
+                      No staking, no locking, no expiry. Your NFT earns rewards
+                      as long as you hold it
+                    </p>
                   </div>
                 </div>
               </div>
@@ -477,7 +542,9 @@ export const BuyNFT: React.FC = () => {
                       </div>
                       <div className="text-left">
                         <p className="font-bold text-white">LIMITLESS Token</p>
-                        <p className="text-gray-400 text-xs">Earned per day, forever</p>
+                        <p className="text-gray-400 text-xs">
+                          Earned per day, forever
+                        </p>
                       </div>
                     </div>
                   </div>

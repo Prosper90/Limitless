@@ -30,7 +30,7 @@ export function useStablecoinDecimals(): number {
 // Hook for NFT operations
 export function useLimitlessNFT() {
   const { address } = useAccount();
-  const stablecoinDecimals = useStablecoinDecimals();
+  // const stablecoinDecimals = useStablecoinDecimals();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -73,10 +73,13 @@ export function useLimitlessNFT() {
     });
   };
 
+  console.log(
+    nftPrice,
+    "Original checker oooooo",
+    formatUnits(nftPrice as bigint, 18),
+  );
   return {
-    nftPrice: nftPrice
-      ? formatUnits(nftPrice as bigint, stablecoinDecimals)
-      : "1",
+    nftPrice: nftPrice ? formatUnits(nftPrice as bigint, 6) : "1",
     totalMinted: totalMinted?.toString() || "0",
     userNFTBalance: userNFTBalance?.toString() || "0",
     userTokens: userTokens as bigint[] | undefined,
@@ -114,7 +117,7 @@ export function useLimitlessToken() {
   };
 }
 
-// Hook for Genesis Vault stats (replaces useBuybackPool)
+// Hook for Genesis Vault stats
 export function useGenesisVault() {
   const stablecoinDecimals = useStablecoinDecimals();
 
@@ -124,55 +127,70 @@ export function useGenesisVault() {
     functionName: "getVaultStats",
   });
 
-  const { data: floorPriceRaw } = useReadContract({
-    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
-    abi: GENESIS_VAULT_ABI,
-    functionName: "getFloorPrice",
-  });
-
   const { data: minRedemptionRaw } = useReadContract({
     address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
     abi: GENESIS_VAULT_ABI,
     functionName: "minRedemptionAmount",
   });
 
+  const { data: maxSupplyData } = useReadContract({
+    address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
+    abi: LIMITLESS_TOKEN_ABI,
+    functionName: "MAX_SUPPLY",
+  });
+
+  // Auto-refresh vault stats every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchStats();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [refetchStats]);
+
   // Stats: [backing, distributed, claimed, redeemed, redeemedUSDC, floorPrice, activeNFTs, vaultTokenBalance, dailyReward]
-  // Note: 'distributed' returns real-time accrued tokens from contract
   const stats = vaultStats as
     | [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint]
     | undefined;
 
-  // Parse values from stats
   const totalBackingValue = stats
     ? parseFloat(formatUnits(stats[0], stablecoinDecimals))
     : 0;
 
-  // Get raw accrued value and active NFTs
   const rawAccrued = stats ? parseFloat(formatEther(stats[1])) : 0;
   const activeNFTsCount = stats ? Number(stats[6]) : 0;
+  let floorPriceValueFromContract = stats
+    ? parseFloat(formatUnits(stats[5], 18))
+    : 0; // Use 18 decimals as contract returns 1e18 scaled value
 
-  // Calculate effective distributed: activeNFTs (base) + rawAccrued (time-based)
-  // Show whole tokens only - tokens appear after complete 24-hour periods
+  // --- Fallback calculation if contract floorPrice is 0 ---
+  // Contract returns 0 due to integer division underflow, so we calculate it here:
+  // floorPrice = totalBackingUSDT / MAX_SUPPLY
+  let finalFloorPrice = floorPriceValueFromContract;
+  if (finalFloorPrice === 0 && stats && maxSupplyData) {
+    const rawTotalBackingUSDT = stats[0]; // bigint
+    const rawMaxSupply = maxSupplyData as bigint; // bigint
+
+    const totalBackingUSDAmount = parseFloat(
+      formatUnits(rawTotalBackingUSDT, stablecoinDecimals),
+    ); // e.g., 1.25
+    const totalTokens = parseFloat(formatEther(rawMaxSupply)); // e.g., 1e15 (1 quadrillion tokens)
+
+    if (totalTokens > 0 && totalBackingUSDAmount > 0) {
+      finalFloorPrice = totalBackingUSDAmount / totalTokens; // This yields 1.25 / 1e15 = 1.25e-15
+      console.log("Floor price fallback calculation:", {
+        totalBackingUSDAmount,
+        totalTokens,
+        finalFloorPrice,
+      });
+    }
+  } // --- End Fallback ---
+
   const effectiveDistributed = activeNFTsCount + Math.floor(rawAccrued);
 
-  // Floor price now calculated by contract using real-time accrued tokens
-  // No need for theoretical calculation - contract handles it
-  let floorPriceValue = 0;
-  if (floorPriceRaw) {
-    floorPriceValue = parseFloat(
-      formatUnits(floorPriceRaw as bigint, stablecoinDecimals),
-    );
-  } else if (stats && stats[5] > BigInt(0)) {
-    floorPriceValue = parseFloat(formatUnits(stats[5], stablecoinDecimals));
-  }
-
   return {
-    // USDC-denominated values — use stablecoin decimals
     totalBacking: totalBackingValue.toString(),
     totalRedeemedUSDC: stats ? formatUnits(stats[4], stablecoinDecimals) : "0",
-    floorPrice: floorPriceValue.toString(),
-    // Token-denominated values — always 18 decimals
-    // totalDistributed uses effective value: max(accrued, activeNFTs) to match floor price logic
+    floorPrice: finalFloorPrice, // Use the final calculated floor price
     totalDistributed: effectiveDistributed.toString(),
     totalClaimed: stats ? formatEther(stats[2]) : "0",
     totalRedeemed: stats ? formatEther(stats[3]) : "0",
@@ -186,7 +204,7 @@ export function useGenesisVault() {
   };
 }
 
-// Hook for Vault historical data — replaces useBuybackPoolHistory
+// Hook for Vault historical data
 export function useVaultHistory(snapshotCount: number = 30) {
   const stablecoinDecimals = useStablecoinDecimals();
 
@@ -207,39 +225,33 @@ export function useVaultHistory(snapshotCount: number = 30) {
     args: [BigInt(snapshotCount)],
   });
 
-  // Get live floor price to use for the most recent data point
-  // (Snapshots may have stale floor price since they're taken before NFT registration)
-  const { data: liveFloorPrice } = useReadContract({
-    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
-    abi: GENESIS_VAULT_ABI,
-    functionName: "getFloorPrice",
+  // Read MAX_SUPPLY for floor price calculation (contract returns 0 due to underflow)
+  const { data: maxSupplyData } = useReadContract({
+    address: CONTRACTS.LIMITLESS_TOKEN as `0x${string}`,
+    abi: LIMITLESS_TOKEN_ABI,
+    functionName: "MAX_SUPPLY",
   });
 
-  // Get live total accrued tokens
-  const { data: liveTotalAccrued } = useReadContract({
-    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
-    abi: GENESIS_VAULT_ABI,
-    functionName: "getTotalAccruedTokens",
-  });
+  // Auto-refresh every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [refetch]);
 
-  // Get live total backing
-  const { data: liveTotalBacking } = useReadContract({
-    address: CONTRACTS.GENESIS_VAULT as `0x${string}`,
-    abi: GENESIS_VAULT_ABI,
-    functionName: "totalBackingUSDT",
-  });
-
-  const liveFloorPriceValue = liveFloorPrice
-    ? parseFloat(formatUnits(liveFloorPrice as bigint, stablecoinDecimals))
+  // Calculate MAX_SUPPLY in token units (1e15 tokens = 1,000,000,000,000,000)
+  const maxSupplyTokens = maxSupplyData
+    ? parseFloat(formatEther(maxSupplyData as bigint))
     : 0;
 
-  const liveTotalAccruedValue = liveTotalAccrued
-    ? parseFloat(formatEther(liveTotalAccrued as bigint))
-    : 0;
-
-  const liveTotalBackingValue = liveTotalBacking
-    ? parseFloat(formatUnits(liveTotalBacking as bigint, stablecoinDecimals))
-    : 0;
+  // Debug log for MAX_SUPPLY
+  if (maxSupplyData) {
+    console.log("useVaultHistory: MAX_SUPPLY data", {
+      raw: maxSupplyData.toString(),
+      formatted: maxSupplyTokens,
+    });
+  }
 
   const chartData = snapshots
     ? (
@@ -250,44 +262,36 @@ export function useVaultHistory(snapshotCount: number = 30) {
           floorPrice: bigint;
           activeNFTs: bigint;
         }>
-      ).map((snapshot, index, arr) => {
-        const totalBacking = parseFloat(
+      ).map((snapshot, index) => {
+        const backingValue = parseFloat(
           formatUnits(snapshot.totalBacking, stablecoinDecimals),
         );
-        const totalDistributed = parseFloat(
-          formatEther(snapshot.totalDistributed),
-        );
-        const activeNFTs = Number(snapshot.activeNFTs);
 
-        // For the most recent snapshot, use live values if snapshot values are 0
-        // This handles the case where snapshot is taken before NFT registration
-        const isLastSnapshot = index === arr.length - 1;
+        // Calculate floor price from backing / MAX_SUPPLY
+        // Contract's floorPrice is 0 due to integer underflow, so we calculate it here
+        const calculatedFloorPrice =
+          maxSupplyTokens > 0 && backingValue > 0
+            ? backingValue / maxSupplyTokens
+            : 0;
 
-        // Recalculate floor price from backing/activeNFTs to avoid snapshot timing issue
-        // (Snapshots are taken before NFT registration, causing incorrect floor price)
-        let floorPrice = 0;
-        if (activeNFTs > 0) {
-          // Floor price = backing / activeNFTs (each NFT represents 1 token minimum)
-          floorPrice = totalBacking / activeNFTs;
-        } else if (isLastSnapshot && liveFloorPriceValue > 0) {
-          // Fallback to live floor price for latest snapshot if no NFTs in snapshot
-          floorPrice = liveFloorPriceValue;
+        // Debug log for first snapshot
+        if (index === 0 && backingValue > 0) {
+          console.log("useVaultHistory: Chart floor price calc", {
+            backingValue,
+            maxSupplyTokens,
+            calculatedFloorPrice,
+          });
         }
-
-        // Calculate effective distributed: activeNFTs (base) + accrued (time-based)
-        // This matches the frontend display where each NFT shows "1 base + fractional accrual"
-        const effectiveTotalDistributed = activeNFTs + totalDistributed;
-        const effectiveLiveDistributed = activeNFTs + liveTotalAccruedValue;
 
         return {
           timestamp: Number(snapshot.timestamp) * 1000,
           date: new Date(
             Number(snapshot.timestamp) * 1000,
           ).toLocaleDateString(),
-          totalBacking: isLastSnapshot && totalBacking === 0 ? liveTotalBackingValue : totalBacking,
-          totalDistributed: isLastSnapshot && effectiveTotalDistributed === 0 ? effectiveLiveDistributed : effectiveTotalDistributed,
-          floorPrice,
-          activeNFTs,
+          totalBacking: backingValue,
+          totalDistributed: parseFloat(formatEther(snapshot.totalDistributed)),
+          floorPrice: calculatedFloorPrice,
+          activeNFTs: Number(snapshot.activeNFTs),
         };
       })
     : [];
@@ -390,14 +394,10 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
     const lastDistributionTime = balData ? Number(balData[4]) : 0;
     const isActive = info ? info[6] : false;
 
-    // Display balance: whole tokens only (base 1 + completed 24-hour cycles)
-    // No fractional progress - tokens only appear after full 24 hours
-    let displayBalance = 0;
-    if (isActive) {
-      const baseReward = 1; // Each NFT has 1 base token
-      const pendingTokens = info ? parseFloat(formatEther(info[1])) : 0; // Whole tokens from contract
-      displayBalance = baseReward + pendingTokens;
-    }
+    // Display balance = tokenBalance + pending (per-second accrual, real on-chain value)
+    const displayBalance = info
+      ? parseFloat(formatEther(info[0])) + parseFloat(formatEther(info[1]))
+      : 0;
 
     return {
       tokenId: Number(tokenId),
@@ -411,8 +411,7 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
       liquidityValue: info ? formatUnits(info[5], stablecoinDecimals) : "0",
       isActive,
       lastDistributionTime,
-      // Display balance = whole tokens only (base + completed days)
-      displayBalance: Math.floor(displayBalance).toString(),
+      displayBalance: displayBalance.toFixed(4),
     };
   });
 
@@ -431,18 +430,15 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
   const bonusBalance = bonusBalanceRaw
     ? parseFloat(formatEther(bonusBalanceRaw as bigint))
     : 0;
-  const totalAvailable = totalTokenBalance + totalPending + walletBal + bonusBalance;
 
-  // Calculate whole tokens only: base (1 per NFT) + pending (whole tokens from contract)
-  // No fractional display - tokens only appear after complete 24-hour periods
-  const nftCount = nfts.filter((n) => n.isActive).length;
+  const totalAvailable =
+    totalTokenBalance + totalPending + walletBal + bonusBalance;
 
-  // Whole tokens = nftCount (base, 1 per active NFT) + totalPending (completed 24h cycles)
-  // This updates when contract data refreshes (every 30 seconds or on user action)
+  // Per-second accrual: tokens accrue continuously
   useEffect(() => {
-    const wholeTokens = nftCount + Math.floor(totalPending);
-    setRealtimePending(wholeTokens.toString());
-  }, [nftCount, totalPending]);
+    const total = totalTokenBalance + totalPending;
+    setRealtimePending(total.toFixed(4));
+  }, [totalTokenBalance, totalPending]);
 
   // Auto-refresh contract data every 30 seconds
   useEffect(() => {
@@ -468,11 +464,11 @@ export function useNFTRewards(tokenIds: bigint[] | undefined) {
 
   return {
     nfts,
-    totalTokenBalance: Math.floor(totalTokenBalance).toString(),
-    totalPending: Math.floor(totalPending).toString(),
-    totalAvailable: Math.floor(totalAvailable).toString(),
+    totalTokenBalance: totalTokenBalance.toFixed(4),
+    totalPending: totalPending.toFixed(4),
+    totalAvailable: totalAvailable.toFixed(4),
     realtimePending,
-    bonusBalance: Math.floor(bonusBalance).toString(),
+    bonusBalance: bonusBalance.toFixed(4),
     distribute,
     isPending,
     isConfirming,
@@ -613,8 +609,12 @@ export function useVaultActions() {
     isRedeemBonusConfirming ||
     isApproveConfirming;
   const isSuccess =
-    isClaimSuccess || isRedeemNFTSuccess || isRedeemWalletSuccess || isRedeemBonusSuccess;
-  const combinedError = claimError || redeemNFTError || redeemWalletError || redeemBonusError;
+    isClaimSuccess ||
+    isRedeemNFTSuccess ||
+    isRedeemWalletSuccess ||
+    isRedeemBonusSuccess;
+  const combinedError =
+    claimError || redeemNFTError || redeemWalletError || redeemBonusError;
 
   return {
     claimTokens,

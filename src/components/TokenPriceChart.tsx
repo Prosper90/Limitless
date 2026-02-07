@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useVaultHistory } from "../hooks/useLimitless";
+import { formatCurrency, formatFloorPrice } from "../utils/formatUtils";
 
 type ChartMetric = "floorPrice" | "totalDistributed" | "totalBacking";
 
@@ -26,7 +27,7 @@ const metrics: MetricConfig[] = [
     label: "Floor Price",
     color: "#a855f7",
     gradientId: "colorPrice",
-    format: (v) => `$${v.toFixed(4)}`,
+    format: (v) => formatFloorPrice(v),
   },
   {
     key: "totalDistributed",
@@ -240,8 +241,14 @@ export const TokenPriceChart: React.FC = () => {
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#6b7280", fontSize: 11 }}
-              tickFormatter={(value) => currentMetric.format(value)}
-              width={70}
+              tickFormatter={(value) => {
+                // Use appropriate formatter based on selected metric
+                if (selectedMetric === "floorPrice") {
+                  return formatFloorPrice(value, "");
+                }
+                return formatCurrency(value, { currencySymbol: "", precision: 2, abbreviate: true });
+              }}
+              width={80}
             />
             <Tooltip content={<CustomTooltip metric={currentMetric} />} />
             <Area
