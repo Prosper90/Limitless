@@ -73,11 +73,11 @@ export function useLimitlessNFT() {
     });
   };
 
-  console.log(
-    nftPrice,
-    "Original checker oooooo",
-    formatUnits(nftPrice as bigint, 18),
-  );
+  // console.log(
+  //   nftPrice,
+  //   "Original checker oooooo",
+  //   formatUnits(nftPrice as bigint, 18),
+  // );
   return {
     nftPrice: nftPrice ? formatUnits(nftPrice as bigint, 6) : "1",
     totalMinted: totalMinted?.toString() || "0",
